@@ -1,0 +1,6 @@
+{
+  "name": "blag",
+  "description": "Minimalist luxury jewelry brand e-commerce website.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
