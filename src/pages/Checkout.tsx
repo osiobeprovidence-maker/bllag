@@ -1,15 +1,18 @@
 import { ShoppingBag, ArrowLeft, CheckCircle2, Wallet, CreditCard } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useShopStore, useAuthStore } from '../store';
+import { useMutation, useAction } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { EmptyState } from '../components/ui/EmptyState';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db, auth } from '../lib/firebase';
+import { PAYSTACK_PUBLIC_KEY, generateReference } from '../lib/paystack';
 
 export function Checkout() {
   const { cart, cartTotal, clearCart } = useShopStore();
   const { isAuthenticated, user, updateBalance, updateAddress } = useAuthStore();
+  const createOrder = useMutation(api.orders.create);
+  const sendEmail = useAction(api.emails.sendOrderConfirmation);
   const [isSuccess, setIsSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet' | 'installment'>('card');
   const [pssFrequency, setPssFrequency] = useState<'weekly' | 'monthly'>('weekly');
@@ -33,10 +36,11 @@ export function Checkout() {
   });
 
   const subtotal = cartTotal();
-  
+  const ref = generateReference();
+
   let discountRate = 0;
   let freeShipping = false;
-  
+
   if (isAuthenticated && user?.membership.status === 'active') {
     if (user.membership.level === 'silver') discountRate = 0.05;
     if (user.membership.level === 'gold') {
@@ -61,24 +65,110 @@ export function Checkout() {
     }
   };
 
-  const handleCheckout = (e: React.FormEvent) => {
+  const completeOrder = async (paymentRef?: string) => {
+    const address = useSavedAddress && user?.address
+      ? user.address
+      : {
+          street: checkoutAddress.street,
+          city: checkoutAddress.city,
+          state: checkoutAddress.state,
+          zipCode: checkoutAddress.zipCode,
+          country: checkoutAddress.country,
+        };
+
+    const now = new Date().toISOString();
+    const orderId = `BLG-${Date.now()}`;
+
+    await createOrder({
+      userId: user?.email || 'guest',
+      customerEmail: checkoutAddress.email,
+      customerName: `${checkoutAddress.firstName} ${checkoutAddress.lastName}`.trim(),
+      items: cart.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        category: item.category,
+        image: item.image,
+        description: item.description,
+        isPaySmallSmall: item.isPaySmallSmall,
+        isGift: item.isGift,
+        originalPrice: item.originalPrice,
+        discount: item.discount,
+        rating: item.rating,
+        reviews: item.reviews,
+        isNew: item.isNew,
+        isBestSeller: item.isBestSeller,
+        pssConfig: item.pssConfig,
+      })),
+      total,
+      status: 'pending',
+      paymentStatus: 'paid',
+      trackingNumber: paymentRef,
+      shippingAddress: address,
+    });
+
+    sendEmail({
+      email: checkoutAddress.email,
+      customerName: `${checkoutAddress.firstName} ${checkoutAddress.lastName}`.trim(),
+      orderId,
+      total,
+      items: cart.map((i) => ({ name: i.name, quantity: i.quantity, price: i.price })),
+    });
+
+    if (saveAddress && isAuthenticated && !useSavedAddress) {
+      updateAddress(address);
+    }
+
+    setIsSuccess(true);
+    setTimeout(() => {
+      clearCart();
+      navigate('/');
+    }, 3000);
+  };
+
+  const handlePaystackSuccess = (reference: string) => {
+    completeOrder(reference);
+  };
+
+  const openPaystack = () => {
+    if (!PAYSTACK_PUBLIC_KEY) {
+      alert("Payment not configured. Please set VITE_PAYSTACK_PUBLIC_KEY.");
+      return;
+    }
+
+    const paystackWindow = window as any;
+    paystackWindow.PaystackPop && paystackWindow.PaystackPop.setup({
+      key: PAYSTACK_PUBLIC_KEY,
+      email: checkoutAddress.email,
+      amount: total * 100,
+      currency: "NGN",
+      ref,
+      metadata: {
+        custom_fields: [
+          { display_name: "Customer Name", variable_name: "customer_name", value: `${checkoutAddress.firstName} ${checkoutAddress.lastName}`.trim() },
+        ],
+      },
+      callback: (response: any) => {
+        handlePaystackSuccess(response.reference);
+      },
+      onClose: () => {
+        console.log("Paystack popup closed");
+      },
+    }).openIframe();
+  };
+
+  const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (saveAddress && isAuthenticated && !useSavedAddress && auth.currentUser) {
-      const newAddress = {
-        street: checkoutAddress.street,
-        city: checkoutAddress.city,
-        state: checkoutAddress.state,
-        zipCode: checkoutAddress.zipCode,
-        country: checkoutAddress.country
-      };
-      
-      updateAddress(newAddress);
-      
-      // Save to Firestore
-      updateDoc(doc(db, 'users', auth.currentUser.uid), {
-        address: newAddress
-      });
+
+    if (!checkoutAddress.email || !checkoutAddress.street) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    if (paymentMethod === 'card') {
+      openPaystack();
+      return;
     }
 
     if (paymentMethod === 'wallet') {
@@ -92,28 +182,24 @@ export function Checkout() {
         alert('Please login to use installment plan');
         return;
       }
-      
+
       const productNames = cart.map(item => item.name).join(', ');
       updateBalance(-(total / pssInstallments), 'installment', `First Installment for ${productNames}`, {
         productName: productNames,
         totalAmount: total,
         installmentsCount: pssInstallments,
         frequency: pssFrequency,
-        startDate: pssStartDate
+        startDate: pssStartDate,
       });
     }
 
-    setIsSuccess(true);
-    setTimeout(() => {
-      clearCart();
-      navigate('/');
-    }, 3000);
+    await completeOrder();
   };
 
   if (cart.length === 0 && !isSuccess) {
     return (
       <div className="pt-32 pb-24 max-w-2xl mx-auto px-6">
-        <EmptyState 
+        <EmptyState
           icon={ShoppingBag}
           title="Checkout Unavailable"
           message="Your shopping bag is currently empty. Curate your collection before proceeding to acquisition."
@@ -129,7 +215,7 @@ export function Checkout() {
   if (isSuccess) {
     return (
       <div className="pt-32 pb-24 min-h-screen flex items-center justify-center">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="text-center max-w-md px-4"
@@ -145,6 +231,8 @@ export function Checkout() {
     );
   }
 
+  const hasPaystackLib = typeof window !== 'undefined' && (window as any).PaystackPop;
+
   return (
     <div className="pt-24 pb-24 min-h-screen max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <Link to="/cart" className="inline-flex items-center text-sm uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors mb-10">
@@ -159,7 +247,7 @@ export function Checkout() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold uppercase tracking-tight">Shipping Details</h2>
                 {user?.address && (
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setUseSavedAddress(!useSavedAddress)}
                     className="text-[10px] font-black uppercase tracking-widest text-accent hover:underline"
@@ -186,9 +274,9 @@ export function Checkout() {
                 <div className="space-y-4">
                   <div className="space-y-4">
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Contact Information</h3>
-                    <input 
-                      type="email" 
-                      placeholder="Email address" 
+                    <input
+                      type="email"
+                      placeholder="Email address"
                       required
                       value={checkoutAddress.email}
                       onChange={(e) => setCheckoutAddress({...checkoutAddress, email: e.target.value})}
@@ -199,62 +287,62 @@ export function Checkout() {
                   <div className="space-y-4 pt-4">
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Shipping Address</h3>
                     <div className="grid grid-cols-2 gap-4">
-                      <input 
-                        type="text" 
-                        placeholder="First name" 
-                        required 
+                      <input
+                        type="text"
+                        placeholder="First name"
+                        required
                         value={checkoutAddress.firstName}
                         onChange={(e) => setCheckoutAddress({...checkoutAddress, firstName: e.target.value})}
-                        className="w-full bg-transparent border border-muted p-4 text-sm focus:outline-none focus:border-accent transition-colors" 
+                        className="w-full bg-transparent border border-muted p-4 text-sm focus:outline-none focus:border-accent transition-colors"
                       />
-                      <input 
-                        type="text" 
-                        placeholder="Last name" 
-                        required 
+                      <input
+                        type="text"
+                        placeholder="Last name"
+                        required
                         value={checkoutAddress.lastName}
                         onChange={(e) => setCheckoutAddress({...checkoutAddress, lastName: e.target.value})}
-                        className="w-full bg-transparent border border-muted p-4 text-sm focus:outline-none focus:border-accent transition-colors" 
+                        className="w-full bg-transparent border border-muted p-4 text-sm focus:outline-none focus:border-accent transition-colors"
                       />
                     </div>
-                    <input 
-                      type="text" 
-                      placeholder="Address" 
-                      required 
+                    <input
+                      type="text"
+                      placeholder="Address"
+                      required
                       value={checkoutAddress.street}
                       onChange={(e) => setCheckoutAddress({...checkoutAddress, street: e.target.value})}
-                      className="w-full bg-transparent border border-muted p-4 text-sm focus:outline-none focus:border-accent transition-colors" 
+                      className="w-full bg-transparent border border-muted p-4 text-sm focus:outline-none focus:border-accent transition-colors"
                     />
                     <div className="grid grid-cols-3 gap-4">
-                      <input 
-                        type="text" 
-                        placeholder="City" 
-                        required 
+                      <input
+                        type="text"
+                        placeholder="City"
+                        required
                         value={checkoutAddress.city}
                         onChange={(e) => setCheckoutAddress({...checkoutAddress, city: e.target.value})}
-                        className="w-full bg-transparent border border-muted p-4 text-sm focus:outline-none focus:border-accent transition-colors col-span-1" 
+                        className="w-full bg-transparent border border-muted p-4 text-sm focus:outline-none focus:border-accent transition-colors col-span-1"
                       />
-                      <input 
-                        type="text" 
-                        placeholder="State" 
-                        required 
+                      <input
+                        type="text"
+                        placeholder="State"
+                        required
                         value={checkoutAddress.state}
                         onChange={(e) => setCheckoutAddress({...checkoutAddress, state: e.target.value})}
-                        className="w-full bg-transparent border border-muted p-4 text-sm focus:outline-none focus:border-accent transition-colors col-span-1" 
+                        className="w-full bg-transparent border border-muted p-4 text-sm focus:outline-none focus:border-accent transition-colors col-span-1"
                       />
-                      <input 
-                        type="text" 
-                        placeholder="ZIP code" 
-                        required 
+                      <input
+                        type="text"
+                        placeholder="ZIP code"
+                        required
                         value={checkoutAddress.zipCode}
                         onChange={(e) => setCheckoutAddress({...checkoutAddress, zipCode: e.target.value})}
-                        className="w-full bg-transparent border border-muted p-4 text-sm focus:outline-none focus:border-accent transition-colors col-span-1" 
+                        className="w-full bg-transparent border border-muted p-4 text-sm focus:outline-none focus:border-accent transition-colors col-span-1"
                       />
                     </div>
-                    
+
                     {isAuthenticated && (
                       <label className="flex items-center gap-2 cursor-pointer pt-2">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={saveAddress}
                           onChange={(e) => setSaveAddress(e.target.checked)}
                           className="h-4 w-4 border-muted text-accent focus:ring-accent"
@@ -300,14 +388,9 @@ export function Checkout() {
               </div>
 
               {paymentMethod === 'card' && (
-                <div className="bg-muted p-6 border border-gray-300">
-                  <div className="space-y-4">
-                    <input type="text" placeholder="Card number" required={paymentMethod === 'card'} className="w-full bg-background border border-muted p-4 focus:outline-none focus:border-accent transition-colors" />
-                    <div className="grid grid-cols-2 gap-4">
-                      <input type="text" placeholder="MM / YY" required={paymentMethod === 'card'} className="w-full bg-background border border-muted p-4 focus:outline-none focus:border-accent transition-colors" />
-                      <input type="text" placeholder="CVC" required={paymentMethod === 'card'} className="w-full bg-background border border-muted p-4 focus:outline-none focus:border-accent transition-colors" />
-                    </div>
-                  </div>
+                <div className="bg-accent/5 p-6 border border-accent/20">
+                  <p className="text-sm font-medium mb-2">Pay with Card</p>
+                  <p className="text-xs text-muted-foreground">Secure payment via Paystack. You will be redirected to complete the transaction.</p>
                 </div>
               )}
 
@@ -321,12 +404,12 @@ export function Checkout() {
               {paymentMethod === 'installment' && (
                 <div className="bg-primary/5 p-6 border border-primary/20">
                   <p className="text-sm font-bold uppercase tracking-tight mb-4">Pay Small Small (Installment Plan)</p>
-                  
+
                   <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1.5 block">Frequency</label>
-                        <select 
+                        <select
                           value={pssFrequency}
                           onChange={(e) => setPssFrequency(e.target.value as any)}
                           className="w-full bg-background border border-muted p-2 text-xs focus:outline-none focus:border-accent"
@@ -337,9 +420,9 @@ export function Checkout() {
                       </div>
                       <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1.5 block">Installments (2-10)</label>
-                        <input 
-                          type="number" 
-                          min="2" 
+                        <input
+                          type="number"
+                          min="2"
                           max="10"
                           value={pssInstallments}
                           onChange={(e) => setPssInstallments(parseInt(e.target.value) || 2)}
@@ -350,8 +433,8 @@ export function Checkout() {
 
                     <div>
                       <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1.5 block">Start Date</label>
-                      <input 
-                        type="date" 
+                      <input
+                        type="date"
                         value={pssStartDate}
                         onChange={(e) => setPssStartDate(e.target.value)}
                         className="w-full bg-background border border-muted p-2 text-xs focus:outline-none focus:border-accent"
@@ -379,11 +462,13 @@ export function Checkout() {
               )}
             </div>
 
-            <button 
+            <button
               type="submit"
               className="w-full bg-primary text-primary-foreground py-5 text-sm uppercase tracking-widest hover:bg-accent transition-colors"
             >
-              {paymentMethod === 'installment' ? `Pay First Installment ₦${(total/pssInstallments).toLocaleString()}` : `Pay ₦${total.toLocaleString()}`}
+              {paymentMethod === 'installment'
+                ? `Pay First Installment ₦${(total / pssInstallments).toLocaleString()}`
+                : `Pay ₦${total.toLocaleString()}`}
             </button>
           </form>
         </div>
@@ -392,7 +477,7 @@ export function Checkout() {
         <div className="lg:w-2/5">
           <div className="bg-muted p-8 sticky top-32">
             <h2 className="text-xl font-bold uppercase tracking-tight mb-8">In Your Bag</h2>
-            
+
             <div className="space-y-6 mb-8 max-h-96 overflow-y-auto pr-2">
               {cart.map((item) => (
                 <div key={`${item.id}-${item.isPaySmallSmall}-${item.isGift}`} className="flex gap-4">
@@ -418,14 +503,14 @@ export function Checkout() {
             </div>
 
             <div className="flex gap-2 mb-8">
-              <input 
-                type="text" 
-                placeholder="Coupon code" 
+              <input
+                type="text"
+                placeholder="Coupon code"
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value)}
                 className="flex-1 bg-white border border-gray-300 p-3 text-[10px] font-black uppercase focus:outline-none focus:border-accent"
               />
-              <button 
+              <button
                 type="button"
                 onClick={handleApplyCoupon}
                 className="px-6 bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-accent transition-colors"
@@ -434,23 +519,23 @@ export function Checkout() {
               </button>
             </div>
 
-              <div className="space-y-4 text-sm mb-6 border-b border-gray-300 pb-6">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>₦{subtotal.toLocaleString()}</span>
-                </div>
-                {discountRate > 0 && (
-                  <div className="flex justify-between text-accent font-medium">
-                    <span>Member Discount ({discountRate * 100}%)</span>
-                    <span>-₦{discount.toLocaleString()}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Shipping</span>
-                  <span>{shipping === 0 ? 'Free' : `₦${shipping.toLocaleString()}`}</span>
-                </div>
+            <div className="space-y-4 text-sm mb-6 border-b border-gray-300 pb-6">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>₦{subtotal.toLocaleString()}</span>
               </div>
-            
+              {discountRate > 0 && (
+                <div className="flex justify-between text-accent font-medium">
+                  <span>Member Discount ({discountRate * 100}%)</span>
+                  <span>-₦{discount.toLocaleString()}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Shipping</span>
+                <span>{shipping === 0 ? 'Free' : `₦${shipping.toLocaleString()}`}</span>
+              </div>
+            </div>
+
             <div className="flex justify-between text-lg font-medium">
               <span>Total</span>
               <span>₦{total.toLocaleString()}</span>

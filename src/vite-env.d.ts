@@ -29,3 +29,20 @@ declare module '*.gif' {
   const src: string;
   export default src;
 }
+
+interface PaystackPop {
+  setup(config: {
+    key: string;
+    email: string;
+    amount: number;
+    currency?: string;
+    ref: string;
+    metadata?: Record<string, unknown>;
+    callback: (response: { reference: string }) => void;
+    onClose: () => void;
+  }): { openIframe(): void };
+}
+
+interface Window {
+  PaystackPop?: PaystackPop;
+}
