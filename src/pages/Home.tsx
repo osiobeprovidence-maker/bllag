@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowRight, Instagram } from 'lucide-react';
 import { products } from '../data/products';
+import heroBanner from '../assets/images/jewelry_hero_banner_1782380026708.jpg';
 
 export function Home() {
   const bestSellers = products.filter(p => p.isBestSeller).slice(0, 4);
@@ -13,7 +14,7 @@ export function Home() {
         <div className="absolute inset-0 z-0 bg-[#ffe5e5]">
           <img 
             referrerPolicy="no-referrer"
-            src="/src/assets/images/jewelry_hero_banner_1782380026708.jpg" 
+            src={heroBanner} 
             alt="Jewelry Sale" 
             className="w-full h-full object-cover object-center opacity-80"
           />
