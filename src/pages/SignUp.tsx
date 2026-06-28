@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithRedirect, getRedirectResult, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { useAuthStore } from '../store';
 
@@ -15,13 +15,22 @@ export function SignUp() {
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    getRedirectResult(auth).then((result) => {
+      if (result?.user) {
+        navigate('/');
+      }
+    }).catch((err) => {
+      console.error("Redirect sign-in error:", err);
+    });
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: name });
-      // store state will be updated by App.tsx listener
       navigate('/');
     } catch (err: any) {
       setError(err.message || 'Failed to create account');
@@ -32,9 +41,7 @@ export function SignUp() {
     setError(null);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      // store state will be updated by App.tsx listener
-      navigate('/');
+      await signInWithRedirect(auth, provider);
     } catch (err: any) {
       setError(err.message || 'Failed to sign up with Google');
     }
