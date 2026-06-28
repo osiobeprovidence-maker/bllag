@@ -1,57 +1,51 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { products } from '../data/products';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { useShopStore, Review as ReviewType } from '../store';
-import { useCustomerData } from '../hooks/useCustomerData';
-import React, { useState, useEffect } from 'react';
-import { Heart, ChevronRight, ChevronLeft, Minus, Plus, Star, MessageSquare } from 'lucide-react';
+import React, { useState } from 'react';
+import { Heart, ChevronRight, Minus, Plus, Star } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
-import { db, auth } from '../lib/firebase';
+import { useAuthStore } from '../store';
 
 export function ProductDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: any }>();
   const navigate = useNavigate();
-  const product = products.find(p => p.id === id);
+  const product = useQuery(api.products.getById, id ? { id } : "skip");
+  const allProducts = useQuery(api.products.list);
+  const products = allProducts ?? [];
+  const productReviewsData = useQuery(api.reviews.getByProduct, id ? { productId: id } : "skip");
+  const productReviews = productReviewsData ?? [];
+  const createReview = useMutation(api.reviews.create);
   const { addToCart, toggleWishlist, isInWishlist } = useShopStore();
-  const { addReview } = useCustomerData();
+  const authUser = useAuthStore((s) => s.user);
   const [quantity, setQuantity] = useState(1);
   const [isPaySmallSmall, setIsPaySmallSmall] = useState(false);
   const [isGift, setIsGift] = useState(false);
   const [activeTab, setActiveTab] = useState<'description' | 'materials' | 'shipping' | 'reviews'>('description');
-  const [productReviews, setProductReviews] = useState<ReviewType[]>([]);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
-
-  useEffect(() => {
-    if (!id) return;
-    const q = query(collection(db, 'reviews'), where('productId', '==', id), orderBy('createdAt', 'desc'));
-    const unsub = onSnapshot(q, (snapshot) => {
-      setProductReviews(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ReviewType)));
-    }, (error) => {
-      console.error("Error fetching reviews:", error);
-    });
-    return unsub;
-  }, [id]);
 
   if (!product) {
     return <div className="pt-32 text-center">Product not found</div>;
   }
 
+  const productForStore = { ...product, id: product._id } as any;
+
   const handleAddToCart = () => {
-    addToCart(product, quantity, { isPaySmallSmall, isGift });
+    addToCart(productForStore, quantity, { isPaySmallSmall, isGift });
   };
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser) {
+    if (!authUser) {
       alert("Please log in to submit a review.");
       return;
     }
-    await addReview({
-      productId: id!,
-      userId: auth.currentUser.uid,
-      userName: auth.currentUser.displayName || 'Anonymous',
+    await createReview({
+      productId: id,
+      userId: authUser.email,
+      userName: authUser.name,
       rating: reviewForm.rating,
       comment: reviewForm.comment,
     });
@@ -146,10 +140,10 @@ export function ProductDetail() {
             </button>
             
             <button 
-              onClick={() => toggleWishlist(product)}
+              onClick={() => toggleWishlist(productForStore)}
               className="p-4 border border-muted hover:border-black transition-colors flex items-center justify-center group"
             >
-              <Heart className={cn("h-6 w-6 transition-colors", isInWishlist(product.id) ? "fill-accent text-accent" : "text-gray-500 group-hover:text-black")} />
+              <Heart className={cn("h-6 w-6 transition-colors", isInWishlist(product._id) ? "fill-accent text-accent" : "text-gray-500 group-hover:text-black")} />
             </button>
           </div>
 
@@ -261,7 +255,7 @@ export function ProductDetail() {
                       <p className="text-center py-8 italic">No reviews yet. Be the first to review!</p>
                     ) : (
                       productReviews.map((review) => (
-                        <div key={review.id} className="border-b border-gray-100 pb-6">
+                        <div key={review._id} className="border-b border-gray-100 pb-6">
                           <div className="flex justify-between items-start mb-2">
                             <div>
                               <div className="flex text-accent text-[10px] mb-1">
@@ -287,8 +281,8 @@ export function ProductDetail() {
       <div className="mt-20 border-t border-muted pt-12">
         <h2 className="text-2xl font-bold uppercase mb-6">More To Love</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4).map(p => (
-            <Link key={p.id} to={`/product/${p.id}`} className="group block bg-white border border-muted hover:shadow-md transition-shadow">
+          {products.filter((p: any) => p.category === product.category && p._id !== product._id).slice(0, 4).map((p: any) => (
+            <Link key={p._id} to={`/product/${p._id}`} className="group block bg-white border border-muted hover:shadow-md transition-shadow">
               <div className="aspect-[4/5] bg-muted relative overflow-hidden">
                 <img referrerPolicy="no-referrer" src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 {p.discount && (

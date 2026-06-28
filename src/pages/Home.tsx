@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowRight, Instagram } from 'lucide-react';
-import { products } from '../data/products';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import heroBanner from '../assets/images/jewelry_hero_banner_1782380026708.jpg';
 
 export function Home() {
-  const bestSellers = products.filter(p => p.isBestSeller).slice(0, 4);
+  const allProducts = useQuery(api.products.list);
+  const products = allProducts ?? [];
+  const bestSellers = products.filter((p: any) => p.isBestSeller).slice(0, 4);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -87,8 +90,8 @@ export function Home() {
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {products.filter(p => p.isNew || p.discount).map((product) => (
-            <Link key={product.id} to={`/product/${product.id}`} className="group block bg-white border border-muted hover:shadow-md transition-shadow">
+          {products.filter((p: any) => p.isNew || p.discount).map((product) => (
+            <Link key={product._id} to={`/product/${product._id}`} className="group block bg-white border border-muted hover:shadow-md transition-shadow">
               <div className="relative overflow-hidden aspect-[4/5] bg-muted">
                 <img 
                   referrerPolicy="no-referrer"
@@ -187,7 +190,7 @@ export function Home() {
         
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {bestSellers.map((product) => (
-            <Link key={product.id} to={`/product/${product.id}`} className="group block bg-white border border-muted hover:shadow-md transition-shadow">
+            <Link key={product._id} to={`/product/${product._id}`} className="group block bg-white border border-muted hover:shadow-md transition-shadow">
               <div className="relative overflow-hidden aspect-[4/5] bg-muted">
                 <img 
                   referrerPolicy="no-referrer"

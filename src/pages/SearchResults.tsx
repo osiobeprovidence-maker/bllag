@@ -1,28 +1,23 @@
-import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Search, SlidersHorizontal, ShoppingBag, Heart } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { useShopStore } from '../store';
-import { products } from '../data/products';
 
 export function SearchResults() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
+  const allProducts = useQuery(api.products.list) ?? [];
   const { addToCart, toggleWishlist } = useShopStore();
-  const [filteredProducts, setFilteredProducts] = useState(products);
 
-  useEffect(() => {
-    if (query) {
-      const results = products.filter(p => 
-        p.name.toLowerCase().includes(query.toLowerCase()) || 
+  const filteredProducts = query
+    ? allProducts.filter((p: any) =>
+        p.name.toLowerCase().includes(query.toLowerCase()) ||
         p.category.toLowerCase().includes(query.toLowerCase()) ||
         p.description?.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredProducts(results);
-    } else {
-      setFilteredProducts(products);
-    }
-  }, [query, products]);
+      )
+    : allProducts;
 
   return (
     <div className="pt-32 pb-20 px-6 lg:px-12">
@@ -50,13 +45,13 @@ export function SearchResults() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
             {filteredProducts.map((product, index) => (
               <motion.div 
-                key={product.id}
+                key={product._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 className="group cursor-pointer"
               >
-                <Link to={`/product/${product.id}`}>
+                <Link to={`/product/${product._id}`}>
                   <div className="relative aspect-[4/5] bg-[#F8F9FA] overflow-hidden mb-6">
                     <img 
                       src={product.image} 
@@ -68,13 +63,13 @@ export function SearchResults() {
                     </div>
                     <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                       <button 
-                        onClick={(e) => { e.preventDefault(); addToCart(product); }}
+                        onClick={(e) => { e.preventDefault(); addToCart({ ...product, id: product._id } as any); }}
                         className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-accent hover:text-white transition-all transform translate-y-4 group-hover:translate-y-0 duration-500"
                       >
                         <ShoppingBag className="h-5 w-5" />
                       </button>
                       <button 
-                        onClick={(e) => { e.preventDefault(); toggleWishlist(product); }}
+                        onClick={(e) => { e.preventDefault(); toggleWishlist({ ...product, id: product._id } as any); }}
                         className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-accent hover:text-white transition-all transform translate-y-4 group-hover:translate-y-0 duration-500 delay-75"
                       >
                         <Heart className="h-5 w-5" />

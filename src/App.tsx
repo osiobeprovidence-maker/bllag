@@ -6,6 +6,8 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { HelmetProvider, Helmet } from 'react-helmet-async';
+import { useMutation } from 'convex/react';
+import { api } from '../convex/_generated/api';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './lib/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
@@ -70,6 +72,7 @@ function ScrollToTop() {
 export default function App() {
   const setUser = useAuthStore((state) => state.setUser);
   const user = useAuthStore((state) => state.user);
+  const upsertUser = useMutation(api.users.upsert);
 
   useEffect(() => {
     let unsubDoc: (() => void) | undefined;
@@ -104,6 +107,14 @@ export default function App() {
               installments: data.installments ?? [],
               membership: data.membership ?? { level: 'none', status: 'inactive' }
             });
+
+            upsertUser({
+              firebaseUid: firebaseUser.uid,
+              name: firebaseUser.displayName || data.name || 'User',
+              email: firebaseUser.email || data.email || '',
+              role: role,
+              walletBalance: data.walletBalance ?? 50000,
+            });
           } else {
             // Initialize user doc if it doesn't exist
             setDoc(doc(db, 'users', firebaseUser.uid), {
@@ -111,6 +122,14 @@ export default function App() {
               email: firebaseUser.email || '',
               walletBalance: 50000,
               createdAt: new Date().toISOString()
+            });
+
+            upsertUser({
+              firebaseUid: firebaseUser.uid,
+              name: firebaseUser.displayName || 'User',
+              email: firebaseUser.email || '',
+              role: role,
+              walletBalance: 50000,
             });
           }
         }, (error) => {
@@ -126,7 +145,7 @@ export default function App() {
       unsubscribeAuth();
       if (unsubDoc) unsubDoc();
     };
-  }, [setUser]);
+  }, [setUser, upsertUser]);
 
   return (
     <HelmetProvider>

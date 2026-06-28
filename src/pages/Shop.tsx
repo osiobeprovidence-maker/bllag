@@ -1,18 +1,25 @@
 import { ShoppingBag, Filter, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { products, categories } from '../data/products';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { EmptyState } from '../components/ui/EmptyState';
 
+const categoriesList = [
+  'All', 'Necklaces', 'Rings', 'Earrings', 'Hand Chains', 'Leg Chains', 'Hair Accessories'
+];
+
 export function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const allProducts = useQuery(api.products.list);
+  const products = allProducts ?? [];
   const currentCategory = searchParams.get('category') || 'All';
   const searchQuery = searchParams.get('q') || '';
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const filteredProducts = products.filter(p => {
+  const filteredProducts = products.filter((p: any) => {
     const matchesCategory = currentCategory === 'All' || p.category === currentCategory;
     const matchesSearch = !searchQuery || 
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -71,7 +78,7 @@ export function Shop() {
             <div>
               <h3 className="text-sm font-bold uppercase tracking-wide mb-4 border-b pb-2">Categories</h3>
               <ul className="space-y-3">
-                {categories.map(category => (
+                {categoriesList.map(category => (
                   <li key={category}>
                     <button
                       onClick={() => {
@@ -90,7 +97,7 @@ export function Shop() {
                     >
                       <span>{category}</span>
                       <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                        {category === 'All' ? products.length : products.filter(p => p.category === category).length}
+                        {category === 'All' ? products.length : products.filter((p: any) => p.category === category).length}
                       </span>
                     </button>
                   </li>
@@ -149,12 +156,12 @@ export function Shop() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {filteredProducts.map((product, index) => (
                   <motion.div
-                    key={product.id}
+                    key={product._id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: index * 0.05 }}
                   >
-                    <Link to={`/product/${product.id}`} className="group block bg-white border border-muted hover:shadow-md transition-shadow">
+                    <Link to={`/product/${product._id}`} className="group block bg-white border border-muted hover:shadow-md transition-shadow">
                       <div className="relative overflow-hidden aspect-[4/5] bg-muted">
                         <img 
                           referrerPolicy="no-referrer"

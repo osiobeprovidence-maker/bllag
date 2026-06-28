@@ -1,22 +1,17 @@
-import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { SlidersHorizontal, ShoppingBag, Heart, ArrowRight } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { useShopStore } from '../store';
-import { products } from '../data/products';
 
 export function CategoryListing() {
   const { category } = useParams();
+  const allProducts = useQuery(api.products.list) ?? [];
   const { addToCart, toggleWishlist } = useShopStore();
-  const [filteredProducts, setFilteredProducts] = useState(products);
-
-  useEffect(() => {
-    if (category) {
-      setFilteredProducts(products.filter(p => p.category.toLowerCase() === category.toLowerCase()));
-    } else {
-      setFilteredProducts(products);
-    }
-  }, [category, products]);
+  const filteredProducts = category
+    ? allProducts.filter((p: any) => p.category.toLowerCase() === category.toLowerCase())
+    : allProducts;
 
   const categoryMetadata: Record<string, any> = {
     'Necklaces': {
@@ -86,13 +81,13 @@ export function CategoryListing() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
           {filteredProducts.map((product, index) => (
             <motion.div 
-              key={product.id}
+              key={product._id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
               className="group cursor-pointer"
             >
-              <Link to={`/product/${product.id}`}>
+              <Link to={`/product/${product._id}`}>
                 <div className="relative aspect-[4/5] bg-[#F8F9FA] overflow-hidden mb-6">
                   <img 
                     src={product.image} 
@@ -100,14 +95,14 @@ export function CategoryListing() {
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                    <button 
-                      onClick={(e) => { e.preventDefault(); addToCart(product); }}
-                      className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-accent hover:text-white transition-all"
-                    >
-                      <ShoppingBag className="h-5 w-5" />
-                    </button>
-                    <button 
-                      onClick={(e) => { e.preventDefault(); toggleWishlist(product); }}
+                      <button 
+                        onClick={(e) => { e.preventDefault(); addToCart({ ...product, id: product._id } as any); }}
+                        className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-accent hover:text-white transition-all"
+                      >
+                        <ShoppingBag className="h-5 w-5" />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.preventDefault(); toggleWishlist({ ...product, id: product._id } as any); }}
                       className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-accent hover:text-white transition-all"
                     >
                       <Heart className="h-5 w-5" />

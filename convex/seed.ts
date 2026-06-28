@@ -1,0 +1,160 @@
+import { mutation } from "./_generated/server";
+
+export const seedProducts = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const existing = await ctx.db.query("products").collect();
+    if (existing.length > 0) return { seeded: false, count: existing.length };
+
+    const products = [
+      {
+        name: "1pc Rhinestone Decor Heart Charm Necklace",
+        price: 3500,
+        originalPrice: 7000,
+        discount: 50,
+        rating: 4.8,
+        reviews: 1205,
+        category: "Necklaces",
+        image:
+          "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=1000",
+        description: "Trendy rhinestone heart necklace for daily wear.",
+        isBestSeller: true,
+      },
+      {
+        name: "3pcs/set Faux Pearl Decor Drop Earrings",
+        price: 4800,
+        originalPrice: 6000,
+        discount: 20,
+        rating: 4.9,
+        reviews: 842,
+        category: "Earrings",
+        image:
+          "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=1000",
+        description: "Elegant faux pearl earrings set.",
+      },
+      {
+        name: "Minimalist Solid Geometric Ring",
+        price: 2500,
+        rating: 4.5,
+        reviews: 320,
+        category: "Rings",
+        image:
+          "https://images.unsplash.com/photo-1573408302185-9146fe634ad0?auto=format&fit=crop&q=80&w=1000",
+        description: "Simple geometric solid ring.",
+        isNew: true,
+      },
+      {
+        name: "Layered Snake Chain Necklace",
+        price: 6500,
+        originalPrice: 8000,
+        discount: 19,
+        rating: 4.7,
+        reviews: 2100,
+        category: "Necklaces",
+        image:
+          "https://images.unsplash.com/photo-1544441893-675973e31d85?auto=format&fit=crop&q=80&w=1000",
+        description: "Vintage style layered snake chain necklace.",
+        isBestSeller: true,
+      },
+      {
+        name: "1pc Minimalist Finger Bracelet",
+        price: 3200,
+        rating: 4.6,
+        reviews: 154,
+        category: "Hand Chains",
+        image:
+          "https://images.unsplash.com/photo-1506630448388-4e683c67ddb0?auto=format&fit=crop&q=80&w=1000",
+        description: "Delicate hand chain linking to finger.",
+      },
+      {
+        name: "Simple Double Layer Anklet",
+        price: 2800,
+        originalPrice: 5600,
+        discount: 50,
+        rating: 4.8,
+        reviews: 560,
+        category: "Leg Chains",
+        image:
+          "https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?auto=format&fit=crop&q=80&w=1000",
+        description: "Boho style double layer leg chain.",
+        isNew: true,
+      },
+      {
+        name: "Rhinestone Detail Stackable Rings Set",
+        price: 4500,
+        rating: 4.9,
+        reviews: 3400,
+        category: "Rings",
+        image:
+          "https://images.unsplash.com/photo-1598560917505-59a3ad559071?auto=format&fit=crop&q=80&w=1000",
+        description: "Set of 5 stackable rings with rhinestone details.",
+        isBestSeller: true,
+      },
+      {
+        name: "Geometric Hoop Earrings",
+        price: 3500,
+        originalPrice: 7000,
+        discount: 50,
+        rating: 4.4,
+        reviews: 120,
+        category: "Earrings",
+        image:
+          "https://images.unsplash.com/photo-1635322966219-b75ed372eb01?auto=format&fit=crop&q=80&w=1000",
+        description: "Classic minimalist geometric hoop earrings.",
+      },
+      {
+        name: "10pcs Butterfly Design Hair Clips & Jewelry Set",
+        price: 6800,
+        originalPrice: 13600,
+        discount: 50,
+        rating: 4.7,
+        reviews: 430,
+        category: "Hair Accessories",
+        image:
+          "https://images.unsplash.com/photo-1596484552993-37d4e33919da?auto=format&fit=crop&q=80&w=1000",
+        description: "Cute Y2K style butterfly accessories.",
+        isNew: true,
+      },
+      {
+        name: "Chunky Gold Plated Chain Choker",
+        price: 8500,
+        rating: 4.8,
+        reviews: 1250,
+        category: "Necklaces",
+        image:
+          "https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?auto=format&fit=crop&q=80&w=1000",
+        description: "Statement chunky chain choker necklace.",
+        isBestSeller: true,
+      },
+      {
+        name: "5pcs/set Star Decor Stud Earrings",
+        price: 2900,
+        rating: 4.3,
+        reviews: 215,
+        category: "Earrings",
+        image:
+          "https://images.unsplash.com/photo-1590548784585-643d2b9f2915?auto=format&fit=crop&q=80&w=1000",
+        description: "Minimalist star and moon stud earring set.",
+      },
+      {
+        name: "Boho Turquoise Statement Ring",
+        price: 4100,
+        originalPrice: 5900,
+        discount: 31,
+        rating: 4.6,
+        reviews: 89,
+        category: "Rings",
+        image:
+          "https://images.unsplash.com/photo-1629227314026-02e8884976a8?auto=format&fit=crop&q=80&w=1000",
+        description: "Large faux turquoise stone ring.",
+        isNew: true,
+      },
+    ];
+
+    for (const product of products) {
+      await ctx.db.insert("products", product);
+    }
+
+    return { seeded: true, count: products.length };
+  },
+});
