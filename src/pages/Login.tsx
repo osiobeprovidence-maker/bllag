@@ -7,7 +7,6 @@ import { useAuthStore } from '../store';
 
 export function Login() {
   const [method, setMethod] = useState<'selection' | 'email'>('selection');
-  const [role, setRole] = useState<'admin' | 'customer' | 'agent'>('customer');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -89,19 +88,6 @@ export function Login() {
 
         {method === 'selection' ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-2 mb-6">
-              {(['customer', 'agent', 'admin'] as const).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setRole(r)}
-                  className={`py-2 text-[10px] font-bold uppercase tracking-widest border transition-colors ${
-                    role === r ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-gray-300 hover:border-accent'
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
             <button
               onClick={handleGoogleLogin}
               className="w-full flex items-center justify-center gap-3 bg-background border border-gray-300 py-4 text-sm font-bold uppercase tracking-widest hover:border-accent transition-colors"
