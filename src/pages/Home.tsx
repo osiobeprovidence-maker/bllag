@@ -155,7 +155,7 @@ export function Home() {
                 Exclusive Invitation
               </span>
               <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter mb-4 leading-none">
-                Join the <span className="text-accent">BLAG</span> Circle
+                Join the <span className="text-accent">bllag</span> Circle
               </h2>
               <p className="text-sm md:text-lg mb-8 font-medium max-w-xl opacity-90 leading-relaxed">
                 Unlock 15% flat discounts, priority access to new drops, and free global shipping on every order.

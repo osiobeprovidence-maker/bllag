@@ -153,8 +153,8 @@ export default function App() {
         <Router>
           <ScrollToTop />
           <Helmet>
-            <title>BLAQ - Luxury Jewelry & High-End Collections</title>
-            <meta name="description" content="Discover the finest luxury jewelry, royal gold collections, and minimalist diamonds at BLAQ. Crafted with precision and elegance." />
+            <title>bllag - Luxury Jewelry & High-End Collections</title>
+            <meta name="description" content="Discover the finest luxury jewelry, royal gold collections, and minimalist diamonds at bllag. Crafted with precision and elegance." />
           </Helmet>
           <div className="flex flex-col min-h-screen">
             <Navbar />

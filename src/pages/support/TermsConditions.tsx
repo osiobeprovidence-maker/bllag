@@ -7,11 +7,11 @@ export function TermsConditions() {
   const sections = [
     {
       title: 'Agreement Termination',
-      content: 'By accessing the BLAG vault and digital interface, you agree to comply with our established security and transaction protocols. We reserve the right to terminate access for any account exhibiting irregular behavioral patterns.'
+      content: 'By accessing the bllag vault and digital interface, you agree to comply with our established security and transaction protocols. We reserve the right to terminate access for any account exhibiting irregular behavioral patterns.'
     },
     {
       title: 'Intellectual Property',
-      content: 'All artifact designs, holographic imagery, and brand nomenclature are the exclusive property of BLAG HQ. Unauthorized replication of our luxury artifacts is strictly prohibited and protected by international law.'
+      content: 'All artifact designs, holographic imagery, and brand nomenclature are the exclusive property of bllag HQ. Unauthorized replication of our luxury artifacts is strictly prohibited and protected by international law.'
     },
     {
       title: 'Transaction Protocols',

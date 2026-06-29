@@ -396,7 +396,7 @@ export function Checkout() {
 
               {paymentMethod === 'wallet' && (
                 <div className="bg-accent/5 p-6 border border-accent/20">
-                  <p className="text-sm font-medium mb-2">Pay with your BLAG Wallet</p>
+                  <p className="text-sm font-medium mb-2">Pay with your bllag Wallet</p>
                   <p className="text-xs text-muted-foreground">The total amount will be deducted from your available balance.</p>
                 </div>
               )}

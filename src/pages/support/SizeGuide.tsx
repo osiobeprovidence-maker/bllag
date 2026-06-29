@@ -82,7 +82,7 @@ export function SizeGuide() {
               <div>
                 <h3 className="text-sm font-black uppercase tracking-tight mb-4">Measurement Handshake</h3>
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
-                  Unsure of your metrics? We can dispatch a physical BLAG Calibrated Sizer to your destination free of charge. Contact the concierge to initiate this dispatch.
+                  Unsure of your metrics? We can dispatch a physical bllag Calibrated Sizer to your destination free of charge. Contact the concierge to initiate this dispatch.
                 </p>
               </div>
             </div>

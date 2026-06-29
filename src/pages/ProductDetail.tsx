@@ -55,7 +55,7 @@ export function ProductDetail() {
   return (
     <div className="pt-24 pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
       <Helmet>
-        <title>{product.name} - BLAQ Luxury Collections</title>
+        <title>{product.name} - bllag Luxury Collections</title>
         <meta name="description" content={`Experience the ${product.name}. ${product.description}`} />
       </Helmet>
       {/* Breadcrumbs */}

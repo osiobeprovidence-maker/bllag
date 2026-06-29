@@ -50,7 +50,7 @@ export function PrivacyPolicy() {
         <div className="space-y-12">
           <div className="prose prose-sm max-w-none">
             <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest leading-loose mb-12">
-              At BLAG, we view privacy not as a setting, but as a fundamental luxury right. Our digital vault protocols are designed to ensure your identity remains as secure as the artifacts you acquire.
+              At bllag, we view privacy not as a setting, but as a fundamental luxury right. Our digital vault protocols are designed to ensure your identity remains as secure as the artifacts you acquire.
             </p>
           </div>
 

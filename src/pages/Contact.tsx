@@ -19,7 +19,7 @@ export function Contact() {
             <div>
               <h3 className="text-lg font-bold uppercase mb-2">Email</h3>
               <p className="text-muted-foreground font-light mb-1">For general inquiries:</p>
-              <a href="mailto:hello@blag.com" className="hover:text-accent transition-colors font-bold">hello@blag.com</a>
+              <a href="mailto:hello@bllag.com" className="hover:text-accent transition-colors font-bold">hello@bllag.com</a>
             </div>
           </div>
 
@@ -37,7 +37,7 @@ export function Contact() {
             <div>
               <h3 className="text-lg font-bold uppercase mb-2">Studio</h3>
               <p className="text-muted-foreground font-light leading-relaxed">
-                BLAG Global HQ<br />
+                bllag Global HQ<br />
                 Fashion District<br />
                 Los Angeles, CA 90015
               </p>

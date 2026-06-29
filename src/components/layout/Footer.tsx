@@ -7,7 +7,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           <div className="space-y-6">
-            <h2 className="text-3xl font-black tracking-widest uppercase">BLAG</h2>
+            <h2 className="text-3xl font-black tracking-widest uppercase">bllag</h2>
             <p className="text-sm text-gray-400 max-w-xs">
               Trendy jewelry that doesn't break the bank. Upgrade your look with our daily drops.
             </p>
@@ -59,7 +59,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500">
-          <p>&copy; {new Date().getFullYear()} BLAG. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} bllag. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>

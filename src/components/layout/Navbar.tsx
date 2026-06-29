@@ -94,10 +94,10 @@ export function Navbar() {
             {/* Logo */}
             <Link
               to="/"
-              aria-label="BLAQ Home"
+              aria-label="bllag Home"
               className="text-3xl font-black uppercase tracking-widest absolute left-1/2 transform -translate-x-1/2"
             >
-              <span>BLAG</span>
+              <span>bllag</span>
             </Link>
 
             {/* Icons */}
@@ -179,7 +179,7 @@ export function Navbar() {
             <div className="flex flex-col h-full p-6">
               <div className="flex justify-between items-center mb-12">
                 <Link to="/" className="text-3xl font-black uppercase tracking-widest" onClick={() => setIsMobileMenuOpen(false)}>
-                  BLAG
+                  bllag
                 </Link>
                 <button onClick={() => setIsMobileMenuOpen(false)}>
                   <X className="h-6 w-6" />

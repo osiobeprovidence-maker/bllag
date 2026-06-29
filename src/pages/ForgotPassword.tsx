@@ -35,7 +35,7 @@ export function ForgotPassword() {
       >
         <div className="text-center mb-10">
           <Link to="/" className="inline-block text-3xl font-black uppercase tracking-tighter mb-8">
-            BLAG<span className="text-accent italic">.</span>
+            bllag<span className="text-accent italic">.</span>
           </Link>
           <h1 className="text-2xl font-black uppercase tracking-tight mb-3">Recover Access</h1>
           <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest leading-relaxed">

@@ -46,7 +46,7 @@ export function OrderTracking() {
                     <input 
                       type="email" 
                       required
-                      placeholder="vault@blag.com"
+                      placeholder="vault@bllag.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full bg-gray-50 border border-gray-200 p-4 text-[10px] font-black uppercase tracking-widest focus:outline-none focus:border-accent transition-all"
@@ -103,7 +103,7 @@ export function OrderTracking() {
                       <div className="relative">
                         <div className="absolute -left-6 top-1.5 w-4 h-4 bg-gray-300 rounded-full z-10"></div>
                         <p className="text-[10px] font-black uppercase tracking-widest">Package Received</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">BLAG Logistics Center — Oct 17, 2023 at 11:00 AM</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">bllag Logistics Center — Oct 17, 2023 at 11:00 AM</p>
                       </div>
                       <div className="relative">
                         <div className="absolute -left-6 top-1.5 w-4 h-4 bg-gray-300 rounded-full z-10"></div>

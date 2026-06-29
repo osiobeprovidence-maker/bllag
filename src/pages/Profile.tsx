@@ -600,7 +600,7 @@ export function Profile() {
                   <div className="bg-muted p-12 border border-gray-200 text-center">
                     <Crown className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-xl font-black uppercase tracking-tight mb-4">Unlock Exclusive Perks</h3>
-                    <p className="text-muted-foreground mb-8 max-w-md mx-auto">Join the BLAG community and enjoy priority access, special discounts, and luxury services.</p>
+                    <p className="text-muted-foreground mb-8 max-w-md mx-auto">Join the bllag community and enjoy priority access, special discounts, and luxury services.</p>
                     <Link to="/membership" className="bg-primary text-primary-foreground px-12 py-4 text-sm font-bold uppercase tracking-widest hover:bg-accent transition-colors inline-block">
                       View Membership Plans
                     </Link>
@@ -612,10 +612,10 @@ export function Profile() {
             {activeTab === 'about' && (
               <div className="space-y-8">
                 <div className="border-b pb-4">
-                  <h1 className="text-3xl font-black uppercase tracking-tight">About BLAG</h1>
+                  <h1 className="text-3xl font-black uppercase tracking-tight">About bllag</h1>
                 </div>
                 <div className="prose prose-sm max-w-none text-muted-foreground">
-                  <p className="text-lg">BLAG is a premium jewelry brand dedicated to timeless elegance and modern craftsmanship.</p>
+                  <p className="text-lg">bllag is a premium jewelry brand dedicated to timeless elegance and modern craftsmanship.</p>
                   <p>Founded in 2023, we focus on creating pieces that tell a story. Every item is handcrafted with precision and care, using the finest materials available.</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
                     <div className="bg-muted p-8 border border-gray-200">
@@ -644,14 +644,14 @@ export function Profile() {
                         <Mail className="h-5 w-5 text-accent" />
                         <div>
                           <p className="text-[10px] uppercase tracking-widest font-bold">Email Us</p>
-                          <p className="text-sm">support@blag.com</p>
+                          <p className="text-sm">support@bllag.com</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <Phone className="h-5 w-5 text-accent" />
                         <div>
                           <p className="text-[10px] uppercase tracking-widest font-bold">Call Us</p>
-                          <p className="text-sm">+234 800 BLAG HELP</p>
+                          <p className="text-sm">+234 800 bllag HELP</p>
                         </div>
                       </div>
                     </div>
@@ -692,7 +692,7 @@ export function Profile() {
                   <div className="flex gap-2">
                     <input 
                       readOnly 
-                      value={`https://blag.com/?ref=${user.name.toLowerCase().replace(/\s+/g, '')}`}
+                      value={`https://bllag.com/?ref=${user.name.toLowerCase().replace(/\s+/g, '')}`}
                       className="flex-1 bg-background border border-gray-300 p-3 text-xs font-mono"
                     />
                     <button className="bg-primary text-primary-foreground px-6 py-3 text-xs font-bold uppercase tracking-widest">Copy</button>

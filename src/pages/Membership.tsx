@@ -60,9 +60,9 @@ export function Membership() {
     }
 
     const level = tier.name.toLowerCase() as any;
-    updateBalance(-tier.price, 'payment', `BLAG ${tier.name} Membership Subscription`);
+    updateBalance(-tier.price, 'payment', `bllag ${tier.name} Membership Subscription`);
     updateMembership(level);
-    alert(`Welcome to BLAG ${tier.name} Membership!`);
+    alert(`Welcome to bllag ${tier.name} Membership!`);
   };
 
   return (
@@ -76,7 +76,7 @@ export function Membership() {
           >
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent mb-4 block">Exclusive Circle</span>
             <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-6 leading-none">
-              BLAG <span className="text-accent italic font-serif">Membership</span>
+              bllag <span className="text-accent italic font-serif">Membership</span>
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto text-sm md:text-base leading-relaxed">
               Elevate your luxury experience with curated rewards, priority access to rare drops, and bespoke services designed for our most discerning patrons.
@@ -205,7 +205,7 @@ export function Membership() {
                   <Plus className="h-3 w-3 group-open:rotate-45 transition-transform" />
                 </summary>
                 <div className="overflow-hidden">
-                  <p className="text-[11px] text-muted-foreground pt-4 leading-relaxed">Subscription dues are automatically debited from your BLAG Wallet every 30 days. Please maintain a sufficient balance to avoid service interruption.</p>
+                  <p className="text-[11px] text-muted-foreground pt-4 leading-relaxed">Subscription dues are automatically debited from your bllag Wallet every 30 days. Please maintain a sufficient balance to avoid service interruption.</p>
                 </div>
               </details>
               <details className="group border-b border-gray-50 py-4">

@@ -14,7 +14,7 @@ export function Affiliate() {
   if (!isAuthenticated) {
     return (
       <div className="pt-32 pb-24 min-h-screen flex flex-col items-center justify-center max-w-3xl mx-auto px-4 text-center">
-        <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight mb-6">BLAG Agent Program</h1>
+        <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight mb-6">bllag Agent Program</h1>
         <p className="text-muted-foreground mb-8">Please log in to view your agent dashboard.</p>
         <Link 
           to="/login" 
@@ -35,9 +35,9 @@ export function Affiliate() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-muted p-12 border border-gray-200"
         >
-          <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight mb-6">Become a BLAG Agent</h1>
+          <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight mb-6">Become a bllag Agent</h1>
           <p className="text-muted-foreground mb-8 max-w-2xl mx-auto text-lg">
-            Earn up to 15% commission on every sale you refer. Share your love for BLAG jewelry with your audience and get rewarded.
+            Earn up to 15% commission on every sale you refer. Share your love for bllag jewelry with your audience and get rewarded.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             <div>
@@ -74,7 +74,7 @@ export function Affiliate() {
   }
 
   // Agent Dashboard
-  const affiliateLink = `https://blag.com/?ref=${user?.name.toLowerCase().replace(/\s+/g, '') || 'user'}`;
+  const affiliateLink = `https://bllag.com/?ref=${user?.name.toLowerCase().replace(/\s+/g, '') || 'user'}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(affiliateLink);

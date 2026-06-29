@@ -33,7 +33,7 @@ export function PaymentSuccess() {
                 <span className="text-sm font-black uppercase tracking-tighter text-primary">{orderId}</span>
               </div>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
-                Thank you for choosing BLAG. Your order has been successfully processed and is now entering our logistics pipeline. A confirmation email has been dispatched to your vault.
+                Thank you for choosing bllag. Your order has been successfully processed and is now entering our logistics pipeline. A confirmation email has been dispatched to your vault.
               </p>
             </div>
 

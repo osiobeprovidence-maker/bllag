@@ -22,7 +22,7 @@ export function AuthenticationProtocol() {
     },
     {
       title: 'Certification Registry',
-      content: 'Your digital certification is accessible via the BLAG portal using your unique order identity.',
+      content: 'Your digital certification is accessible via the bllag portal using your unique order identity.',
       icon: Award
     }
   ];
@@ -44,7 +44,7 @@ export function AuthenticationProtocol() {
           <div className="flex flex-col md:flex-row items-center gap-8 p-10 bg-gray-50 border border-gray-200">
             <Globe className="h-16 w-16 text-muted-foreground opacity-20" />
             <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest leading-relaxed">
-              BLAG artifacts represent the peak of luxury engineering. To protect your investment, we utilize a multi-layered verification handshake that ensures every piece is authentic, ethically sourced, and of royal quality.
+              bllag artifacts represent the peak of luxury engineering. To protect your investment, we utilize a multi-layered verification handshake that ensures every piece is authentic, ethically sourced, and of royal quality.
             </p>
           </div>
         </header>
@@ -65,7 +65,7 @@ export function AuthenticationProtocol() {
 
         <div className="mt-20 py-20 border-t border-gray-100 flex flex-col items-center text-center">
           <ShieldCheck className="h-16 w-16 text-accent mb-8" />
-          <h3 className="text-2xl font-black uppercase tracking-tight mb-4">The BLAG Authenticator</h3>
+          <h3 className="text-2xl font-black uppercase tracking-tight mb-4">The bllag Authenticator</h3>
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-12 max-w-lg mx-auto leading-relaxed">
             Acquired an artifact from a secondary market? Use our global registry to verify its authenticity and provenance history.
           </p>

@@ -170,7 +170,7 @@ export function Cart() {
                 <div className="p-6 bg-accent/5 border border-accent/20">
                   <div className="flex items-center gap-2 mb-3">
                     <Crown className="h-4 w-4 text-accent" />
-                    <span className="font-black uppercase tracking-tight text-[10px]">Join BLAG Circle</span>
+                    <span className="font-black uppercase tracking-tight text-[10px]">Join bllag Circle</span>
                   </div>
                   <p className="text-[10px] text-muted-foreground mb-4 leading-relaxed">Save up to 15% and get free shipping on all orders.</p>
                   <Link 

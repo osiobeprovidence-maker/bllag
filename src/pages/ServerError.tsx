@@ -20,7 +20,7 @@ export function ServerError() {
             <h1 className="text-[10px] font-black uppercase tracking-[0.5em] text-red-500">System Handshake Failure</h1>
             <h2 className="text-4xl lg:text-5xl font-black uppercase tracking-tighter leading-none">Internal Server Error</h2>
             <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest max-w-md mx-auto leading-relaxed">
-              The BLAG digital infrastructure is currently experiencing a critical handshake failure. Our technical logistics team has been notified.
+              The bllag digital infrastructure is currently experiencing a critical handshake failure. Our technical logistics team has been notified.
             </p>
           </div>
 

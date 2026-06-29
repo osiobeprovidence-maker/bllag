@@ -43,7 +43,7 @@ export function Sustainability() {
           <h2 className="text-4xl lg:text-7xl font-black uppercase tracking-tighter leading-none mb-12">Luxury With Integrity</h2>
           <div className="max-w-2xl mx-auto">
             <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest leading-relaxed">
-              BLAG artifacts are designed to endure for generations—not just in their craftsmanship, but in the positive legacy they leave behind on our planet and its people.
+              bllag artifacts are designed to endure for generations—not just in their craftsmanship, but in the positive legacy they leave behind on our planet and its people.
             </p>
           </div>
         </header>

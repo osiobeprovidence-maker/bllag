@@ -15,7 +15,7 @@ export function HelpCenter() {
 
   const popularArticles = [
     'How do I track my Royal Gold shipment?',
-    'What is the BLAG installment protocol?',
+    'What is the bllag installment protocol?',
     'How to verify artifact authenticity?',
     'Managing international customs & duties',
     'Updating vault access credentials'
@@ -81,7 +81,7 @@ export function HelpCenter() {
             <MessageSquare className="h-10 w-10 mb-8 opacity-50" />
             <h3 className="text-xl font-black uppercase tracking-tight mb-4">Direct Concierge</h3>
             <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed mb-10 opacity-70">
-              Can't find what you're looking for? Speak directly with a BLAG concierge member for personalized assistance.
+              Can't find what you're looking for? Speak directly with a bllag concierge member for personalized assistance.
             </p>
             <Link 
               to="/contact"

@@ -45,7 +45,7 @@ export function Wallet() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div>
             <h1 className="text-4xl font-black uppercase tracking-tight mb-2">My Wallet</h1>
-            <p className="text-muted-foreground">Manage your BLAG credits, gifting, and installment plans.</p>
+            <p className="text-muted-foreground">Manage your bllag credits, gifting, and installment plans.</p>
           </div>
           <div className="bg-muted p-6 border border-gray-200 min-w-[240px] text-right">
             <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1">Available Balance</p>
@@ -213,7 +213,7 @@ export function Wallet() {
               <div className="space-y-4">
                 <div>
                   <p className="text-xs font-bold uppercase mb-1">How do I withdraw?</p>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">Wallet credits can be used for purchases on BLAG. Direct withdrawals to bank accounts are processed within 24-48 hours.</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Wallet credits can be used for purchases on bllag. Direct withdrawals to bank accounts are processed within 24-48 hours.</p>
                 </div>
                 <div>
                   <p className="text-xs font-bold uppercase mb-1">What is PSS?</p>

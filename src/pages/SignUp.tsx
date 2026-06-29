@@ -58,7 +58,7 @@ export function SignUp() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black uppercase tracking-tight mb-2">Create Account</h1>
           <p className="text-muted-foreground text-sm">
-            {method === 'selection' ? 'Choose how you want to join BLAG.' : 'Enter your details to create your account.'}
+            {method === 'selection' ? 'Choose how you want to join bllag.' : 'Enter your details to create your account.'}
           </p>
         </div>
 

@@ -89,7 +89,7 @@ export function AdminDashboard() {
       <aside className="w-64 bg-white border-r border-gray-200 fixed h-full z-20 hidden lg:block">
         <div className="p-8 border-b border-gray-100">
           <Link to="/" className="text-2xl font-black uppercase tracking-tighter">
-            BLAG<span className="text-accent italic">.HQ</span>
+            bllag<span className="text-accent italic">.HQ</span>
           </Link>
           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2">Admin Control Center</p>
         </div>

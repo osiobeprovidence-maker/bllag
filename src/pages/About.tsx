@@ -36,7 +36,7 @@ export function About() {
           >
             <h2 className="text-2xl font-bold uppercase tracking-tight text-primary mb-4">Fast & Trendy</h2>
             <p>
-              Founded in 2024, BLAG is your one-stop destination for the hottest jewelry trends. 
+              Founded in 2024, bllag is your one-stop destination for the hottest jewelry trends. 
               We believe looking amazing shouldn't cost a fortune. That's why we drop new styles daily, straight from the runway to your cart.
             </p>
           </motion.div>
@@ -62,7 +62,7 @@ export function About() {
           >
             <h2 className="text-2xl font-bold uppercase tracking-tight text-primary mb-4">Our Vibe</h2>
             <p>
-              We embrace bold, fast, and unapologetic fashion. Whether you need an accessory for a festival, a night out, or just daily wear, BLAG has you covered. Stack it, layer it, own it.
+              We embrace bold, fast, and unapologetic fashion. Whether you need an accessory for a festival, a night out, or just daily wear, bllag has you covered. Stack it, layer it, own it.
             </p>
           </motion.div>
         </div>
