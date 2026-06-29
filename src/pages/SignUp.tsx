@@ -12,18 +12,28 @@ export function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const login = useAuthStore((state) => state.login);
+  const setUser = useAuthStore((s) => s.setUser);
   const navigate = useNavigate();
 
   useEffect(() => {
     getRedirectResult(auth).then((result) => {
       if (result?.user) {
+        const role = result.user.email === 'riderezzy@gmail.com' ? 'admin' : 'customer';
+        setUser({
+          name: result.user.displayName || 'User',
+          email: result.user.email || '',
+          role: role as any,
+          walletBalance: 50000,
+          transactions: [],
+          installments: [],
+          membership: { level: 'none', status: 'inactive' },
+        });
         navigate('/');
       }
     }).catch((err) => {
       console.error("Redirect sign-in error:", err);
     });
-  }, [navigate]);
+  }, [navigate, setUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +41,17 @@ export function SignUp() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: name });
+      const firebaseUser = userCredential.user;
+      const role = firebaseUser.email === 'riderezzy@gmail.com' ? 'admin' : 'customer';
+      setUser({
+        name: firebaseUser.displayName || name,
+        email: firebaseUser.email || '',
+        role: role as any,
+        walletBalance: 50000,
+        transactions: [],
+        installments: [],
+        membership: { level: 'none', status: 'inactive' },
+      });
       navigate('/');
     } catch (err: any) {
       setError(err.message || 'Failed to create account');
