@@ -10,7 +10,6 @@
 
 import type * as collections from "../collections.js";
 import type * as emails from "../emails.js";
-import type * as firebaseSync from "../firebaseSync.js";
 import type * as notifications from "../notifications.js";
 import type * as orders from "../orders.js";
 import type * as products from "../products.js";
@@ -27,7 +26,6 @@ import type {
 declare const fullApi: ApiFromModules<{
   collections: typeof collections;
   emails: typeof emails;
-  firebaseSync: typeof firebaseSync;
   notifications: typeof notifications;
   orders: typeof orders;
   products: typeof products;
