@@ -1,16 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { User, Package, Settings, LogOut, Shield, Briefcase, MapPin, Phone, Mail, Wallet, Gift, CreditCard, ArrowUpRight, ArrowDownLeft, Crown, Check, Zap, Camera, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../store';
 import { useNavigate, Link } from 'react-router-dom';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, updateDoc } from 'firebase/firestore';
-import { storage, db, auth } from '../lib/firebase';
+import { useClerk } from '@clerk/react';
 
 export function Profile() {
   const { user, logout, updateBalance, updateAddress, updateProfileImage } = useAuthStore();
+  const { signOut } = useClerk();
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'settings' | 'wallet' | 'about' | 'contact' | 'agent' | 'membership' | 'address'>('info');
   const [giftEmail, setGiftEmail] = useState('');
@@ -36,703 +34,373 @@ export function Profile() {
     );
   }
 
-  const handleUpdateAddress = async (newAddress: any) => {
-    if (!auth.currentUser) return;
-    try {
-      await updateDoc(doc(db, 'users', auth.currentUser.uid), {
-        address: newAddress
-      });
-      alert('Address updated!');
-      setActiveTab('info');
-    } catch (error) {
-      console.error('Address update failed:', error);
-      alert('Failed to update address.');
-    }
+  const handleUpdateAddress = (newAddress: any) => {
+    updateAddress(newAddress);
+    alert('Address updated!');
+    setActiveTab('info');
   };
 
   const handleLogout = () => {
+    signOut();
     logout();
     navigate('/');
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user || !auth.currentUser) return;
-
-    try {
-      setIsUploading(true);
-      const storageRef = ref(storage, `profiles/${user.email}/${file.name}`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      
-      // Update Firestore
-      await updateDoc(doc(db, 'users', auth.currentUser.uid), {
-        profileImage: downloadURL
-      });
-      
+  const handleImageUpload = () => {
+    const url = prompt('Enter profile image URL:');
+    if (url && user) {
+      updateProfileImage(url);
       alert('Profile image updated!');
-    } catch (error) {
-      console.error('Upload failed:', error);
-      alert('Failed to upload image. Please try again.');
-    } finally {
-      setIsUploading(false);
     }
   };
 
-  const orders = [
-    { id: '#ORD-7829', date: 'Oct 12, 2023', status: 'Delivered', total: '₦24,500' },
-    { id: '#ORD-7512', date: 'Sep 28, 2023', status: 'Processing', total: '₦12,800' },
+  const handleViewOrder = (orderId: string) => {
+    navigate(`/order/${orderId}`);
+  };
+
+  const copyReferralLink = () => {
+    navigator.clipboard.writeText('https://bllag.xyz/ref/' + user.email);
+    alert('Referral link copied!');
+  };
+
+  const handleGiftSend = () => {
+    if (giftAmount && giftEmail) {
+      updateBalance(-Math.abs(Number(giftAmount)), 'gift', `Gift to ${giftEmail}`);
+      alert(`₦${giftAmount} gift sent to ${giftEmail}`);
+      setGiftAmount('');
+      setGiftEmail('');
+    }
+  };
+
+  const sampleOrders = [
+    { id: 'ORD-001', date: '2024-12-15', status: 'Delivered', total: 450000, items: 2 },
+    { id: 'ORD-002', date: '2024-11-20', status: 'Processing', total: 1250000, items: 1 },
+    { id: 'ORD-003', date: '2024-10-05', status: 'Shipped', total: 780000, items: 3 },
   ];
 
   return (
-    <div className="pt-24 pb-24 min-h-screen max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col lg:flex-row gap-12">
-        {/* Sidebar */}
-        <aside className="lg:w-64 flex-shrink-0">
-          <div className="bg-muted p-8 border border-gray-200 text-center mb-6">
-            <div className="relative group mx-auto mb-4 w-24 h-24">
-              <div className="w-full h-full bg-background border border-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+    <div className="pt-32 pb-24 min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Profile Header */}
+        <div className="bg-muted border border-gray-200 p-6 sm:p-8 mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+            <div className="relative">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-3xl font-black overflow-hidden">
                 {user.profileImage ? (
                   <img src={user.profileImage} alt={user.name} className="w-full h-full object-cover" />
                 ) : (
-                  <User className="h-12 w-12 text-muted-foreground" />
+                  user.name.charAt(0).toUpperCase()
                 )}
               </div>
               <button 
-                onClick={() => fileInputRef.current?.click()}
+                onClick={handleImageUpload}
+                className="absolute -bottom-1 -right-1 w-7 h-7 bg-accent rounded-full flex items-center justify-center text-white"
                 disabled={isUploading}
-                className="absolute inset-0 bg-black/40 text-white rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
               >
-                {isUploading ? (
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                ) : (
-                  <>
-                    <Camera className="h-6 w-6 mb-1" />
-                    <span className="text-[8px] font-black uppercase tracking-widest">Change</span>
-                  </>
-                )}
+                {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
               </button>
-              <input 
-                type="file" 
-                ref={fileInputRef}
-                onChange={handleImageUpload}
-                accept="image/*"
-                className="hidden"
-              />
             </div>
-            <h2 className="text-xl font-black uppercase tracking-tight">{user.name}</h2>
-            <div className="flex items-center justify-center gap-2 mt-2">
-              {user.role === 'admin' && <Shield className="h-4 w-4 text-accent" />}
-              {user.role === 'agent' && <Briefcase className="h-4 w-4 text-accent" />}
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{user.role}</span>
+            <div className="flex-1">
+              <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight">{user.name}</h1>
+              <p className="text-muted-foreground text-sm">{user.email}</p>
+              <div className="flex items-center gap-3 mt-2">
+                <span className="text-xs font-bold uppercase tracking-widest bg-primary/10 text-primary px-3 py-1">{user.role}</span>
+                {user.emailVerified && (
+                  <span className="text-xs font-bold uppercase tracking-widest bg-green-100 text-green-700 px-3 py-1 flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Verified
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Wallet Balance</p>
+              <p className="text-2xl sm:text-3xl font-black tracking-tight">₦{user.walletBalance?.toLocaleString() || '0'}</p>
+              <button onClick={() => setActiveTab('wallet')} className="text-xs text-accent font-bold uppercase tracking-widest hover:underline mt-1">
+                Manage Wallet
+              </button>
             </div>
           </div>
+        </div>
 
-          <nav className="space-y-2">
-            <button
-              onClick={() => setActiveTab('info')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors border ${
-                activeTab === 'info' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-gray-200 hover:border-accent'
-              }`}
-            >
-              <User className="h-4 w-4" /> Personal Info
-            </button>
-            <button
-              onClick={() => setActiveTab('orders')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors border ${
-                activeTab === 'orders' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-gray-200 hover:border-accent'
-              }`}
-            >
-              <Package className="h-4 w-4" /> Order History
-            </button>
-            <button
-              onClick={() => setActiveTab('wallet')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors border ${
-                activeTab === 'wallet' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-gray-200 hover:border-accent'
-              }`}
-            >
-              <Wallet className="h-4 w-4" /> My Wallet
-            </button>
-            <button
-              onClick={() => setActiveTab('membership')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors border ${
-                activeTab === 'membership' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-gray-200 hover:border-accent'
-              }`}
-            >
-              <Crown className="h-4 w-4" /> Membership
-            </button>
-            <button
-              onClick={() => setActiveTab('address')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors border ${
-                activeTab === 'address' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-gray-200 hover:border-accent'
-              }`}
-            >
-              <MapPin className="h-4 w-4" /> Shipping Address
-            </button>
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors border ${
-                activeTab === 'settings' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-gray-200 hover:border-accent'
-              }`}
-            >
-              <Settings className="h-4 w-4" /> Settings
-            </button>
-            
-            <button
-              onClick={() => setActiveTab('about')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors border ${
-                activeTab === 'about' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-gray-200 hover:border-accent'
-              }`}
-            >
-              <Shield className="h-4 w-4" /> About Us
-            </button>
-            
-            <button
-              onClick={() => setActiveTab('contact')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors border ${
-                activeTab === 'contact' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-gray-200 hover:border-accent'
-              }`}
-            >
-              <Phone className="h-4 w-4" /> Contact Support
-            </button>
-            
-            {user.role === 'admin' && (
-              <Link
-                to="/admin"
-                className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors border bg-accent text-white border-accent"
-              >
-                <Shield className="h-4 w-4" /> Admin Panel
-              </Link>
-            )}
-            
-            {user.role === 'agent' && (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <nav className="space-y-1 bg-muted border border-gray-200 p-4">
+              {[
+                { id: 'info', label: 'Personal Info', icon: User },
+                { id: 'orders', label: 'Order History', icon: Package },
+                { id: 'wallet', label: 'Wallet', icon: Wallet },
+                { id: 'address', label: 'Saved Address', icon: MapPin },
+                { id: 'membership', label: 'Membership', icon: Crown },
+                { id: 'settings', label: 'Settings', icon: Settings },
+                { id: 'about', label: 'About', icon: Briefcase },
+                { id: 'contact', label: 'Contact', icon: Phone },
+                { id: 'agent', label: 'Become an Agent', icon: Shield },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest transition-all ${
+                    activeTab === tab.id ? 'bg-primary text-primary-foreground' : 'hover:bg-background'
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              ))}
               <button
-                onClick={() => setActiveTab('agent')}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors border ${
-                  activeTab === 'agent' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-gray-200 hover:border-accent'
-                }`}
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 transition-all"
               >
-                <Briefcase className="h-4 w-4" /> Agent Portal
+                <LogOut className="w-4 h-4" />
+                Sign Out
               </button>
-            )}
+            </nav>
+          </div>
 
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors border bg-background border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 mt-8"
-            >
-              <LogOut className="h-4 w-4" /> Sign Out
-            </button>
-          </nav>
-        </aside>
-
-        {/* Content Area */}
-        <main className="flex-1">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
+          {/* Main Content */}
+          <div className="lg:col-span-3">
             {activeTab === 'info' && (
-              <div className="space-y-8">
-                <div className="border-b pb-4">
-                  <h1 className="text-3xl font-black uppercase tracking-tight">Personal Information</h1>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-muted border border-gray-200 p-6 sm:p-8">
+                <h2 className="text-lg font-black uppercase tracking-tight mb-6">Personal Information</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {[
+                    { label: 'Full Name', value: user.name },
+                    { label: 'Email Address', value: user.email },
+                    { label: 'Role', value: user.role },
+                    { label: 'Email Verified', value: user.emailVerified ? 'Yes' : 'No' },
+                    { label: 'Wallet Balance', value: `₦${user.walletBalance?.toLocaleString() || '0'}` },
+                  ].map((field, i) => (
+                    <div key={i}>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">{field.label}</p>
+                      <p className="text-sm font-bold">{field.value}</p>
+                    </div>
+                  ))}
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="bg-muted p-6 border border-gray-200">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Contact Details</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <Mail className="h-4 w-4 text-accent" />
-                        <div>
-                          <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Email</p>
-                          <p className="font-medium">{user.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Phone className="h-4 w-4 text-accent" />
-                        <div>
-                          <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Phone</p>
-                          <p className="font-medium">+234 800 123 4567</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-muted p-6 border border-gray-200">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Default Address</h3>
-                    <div className="flex items-start gap-3">
-                      <MapPin className="h-4 w-4 text-accent mt-1" />
-                      <div>
-                        <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Shipping Address</p>
-                        {user.address ? (
-                          <>
-                            <p className="font-medium">{user.address.street}</p>
-                            <p className="text-sm">{user.address.city}, {user.address.state} {user.address.zipCode}</p>
-                            <p className="text-sm">{user.address.country}</p>
-                          </>
-                        ) : (
-                          <p className="font-medium text-muted-foreground italic">No address saved</p>
-                        )}
-                        <button 
-                          onClick={() => setActiveTab('address')}
-                          className="mt-3 text-[10px] font-black uppercase tracking-widest text-accent hover:underline"
-                        >
-                          {user.address ? 'Edit Address' : 'Add Address'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-muted p-6 border border-gray-200">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Account Stats</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-black">12</p>
-                      <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Total Orders</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black">4</p>
-                      <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Reviews</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black">2</p>
-                      <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Wishlists</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black">₦145k</p>
-                      <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Spent</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              </motion.div>
             )}
 
             {activeTab === 'orders' && (
-              <div className="space-y-8">
-                <div className="border-b pb-4">
-                  <h1 className="text-3xl font-black uppercase tracking-tight">Recent Orders</h1>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-muted border border-gray-200 p-6 sm:p-8">
+                <h2 className="text-lg font-black uppercase tracking-tight mb-6">Order History</h2>
+                <div className="space-y-4">
+                  {sampleOrders.map((order) => (
+                    <div key={order.id} className="bg-background border border-gray-200 p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-widest">{order.id}</p>
+                        <p className="text-[10px] text-muted-foreground">{order.date} · {order.items} item(s)</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold">₦{order.total.toLocaleString()}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: order.status === 'Delivered' ? '#16a34a' : order.status === 'Shipped' ? '#2563eb' : '#d97706' }}>{order.status}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={() => navigate('/orders')} className="w-full bg-primary text-primary-foreground py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-colors">
+                    View All Orders
+                  </button>
                 </div>
-                
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="text-muted-foreground uppercase tracking-widest text-xs border-b border-gray-200">
-                      <tr>
-                        <th className="pb-4 font-normal">Order ID</th>
-                        <th className="pb-4 font-normal">Date</th>
-                        <th className="pb-4 font-normal">Status</th>
-                        <th className="pb-4 font-normal text-right">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {orders.map((order) => (
-                        <tr key={order.id} className="hover:bg-muted/50 transition-colors">
-                          <td className="py-6 font-bold">{order.id}</td>
-                          <td className="py-6 text-muted-foreground">{order.date}</td>
-                          <td className="py-6">
-                            <span className={`px-2 py-1 text-[10px] font-black uppercase tracking-widest ${
-                              order.status === 'Delivered' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {order.status}
-                            </span>
-                          </td>
-                          <td className="py-6 text-right font-black">{order.total}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              </motion.div>
             )}
 
             {activeTab === 'wallet' && (
-              <div className="space-y-8">
-                <div className="border-b pb-4 flex justify-between items-end">
-                  <div>
-                    <h1 className="text-3xl font-black uppercase tracking-tight">My Wallet</h1>
-                    <p className="text-muted-foreground text-sm">Manage your funds, gifting, and installments.</p>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                <div className="bg-muted border border-gray-200 p-6 sm:p-8">
+                  <h2 className="text-lg font-black uppercase tracking-tight mb-6">Wallet</h2>
+                  <div className="bg-background border border-gray-200 p-6 text-center mb-6">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Available Balance</p>
+                    <p className="text-4xl font-black tracking-tight">₦{user.walletBalance?.toLocaleString() || '0'}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Current Balance</p>
-                    <p className="text-3xl font-black text-accent">₦{user.walletBalance.toLocaleString()}</p>
+                  <div className="grid grid-cols-2 gap-4 mb-8">
+                    <button onClick={() => navigate('/wallet')} className="bg-primary text-primary-foreground py-4 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-colors flex items-center justify-center gap-2">
+                      <ArrowUpRight className="w-4 h-4" /> Fund Wallet
+                    </button>
+                    <button className="bg-background border border-gray-300 py-4 text-xs font-bold uppercase tracking-widest hover:border-accent transition-colors flex items-center justify-center gap-2">
+                      <ArrowDownLeft className="w-4 h-4" /> Withdraw
+                    </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {/* Gifting Section */}
-                  <div className="bg-muted p-6 border border-gray-200">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Gift className="h-5 w-5 text-accent" />
-                      <h3 className="text-xs font-bold uppercase tracking-widest">Send a Gift</h3>
-                    </div>
-                    <div className="space-y-4">
-                      <input 
-                        type="email" 
-                        placeholder="Recipient Email"
-                        value={giftEmail}
-                        onChange={(e) => setGiftEmail(e.target.value)}
-                        className="w-full bg-background border border-gray-300 p-3 text-sm focus:outline-none focus:border-accent transition-colors"
-                      />
-                      <input 
-                        type="number" 
-                        placeholder="Amount (₦)"
-                        value={giftAmount}
-                        onChange={(e) => setGiftAmount(e.target.value)}
-                        className="w-full bg-background border border-gray-300 p-3 text-sm focus:outline-none focus:border-accent transition-colors"
-                      />
-                      <button 
-                        onClick={() => {
-                          const amt = parseFloat(giftAmount);
-                          if (amt > 0 && amt <= user.walletBalance) {
-                            updateBalance(-amt, 'gift', `Gift to ${giftEmail}`);
-                            setGiftAmount('');
-                            setGiftEmail('');
-                            alert('Gift sent successfully!');
-                          }
-                        }}
-                        className="w-full bg-primary text-primary-foreground py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-colors"
-                      >
-                        Send Gift Credits
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Pay Small Small Section */}
-                  <div className="bg-muted p-6 border border-gray-200">
-                    <div className="flex items-center gap-2 mb-4">
-                      <CreditCard className="h-5 w-5 text-accent" />
-                      <h3 className="text-xs font-bold uppercase tracking-widest">Pay Small Small (Layaway)</h3>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-4">
-                      Active installment plans and upcoming payments.
-                    </p>
+                <div className="bg-muted border border-gray-200 p-6 sm:p-8">
+                  <h3 className="text-sm font-black uppercase tracking-tight mb-4">Recent Transactions</h3>
+                  {user.transactions?.length > 0 ? (
                     <div className="space-y-3">
-                      {user.installments.length > 0 ? (
-                        user.installments.map((plan) => (
-                          <div key={plan.id} className="bg-background p-3 border border-gray-100 flex justify-between items-center">
-                            <div>
-                              <p className="text-[10px] font-bold uppercase tracking-tight line-clamp-1">{plan.productName}</p>
-                              <p className="text-[10px] text-muted-foreground">{plan.paidInstallments} of {plan.installmentsCount} payments made</p>
+                      {user.transactions.slice(0, 5).map((tx) => (
+                        <div key={tx.id} className="flex items-center justify-between bg-background border border-gray-200 p-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${tx.type === 'deposit' ? 'bg-green-100' : tx.type === 'gift' ? 'bg-purple-100' : tx.type === 'installment' ? 'bg-blue-100' : 'bg-red-100'}`}>
+                              {tx.type === 'deposit' ? <ArrowUpRight className="w-4 h-4 text-green-600" /> : <ArrowDownLeft className="w-4 h-4 text-red-600" />}
                             </div>
-                            <p className="font-bold text-xs">₦{(plan.totalAmount / plan.installmentsCount).toLocaleString()}</p>
+                            <div>
+                              <p className="text-xs font-bold uppercase tracking-widest">{tx.description}</p>
+                              <p className="text-[10px] text-muted-foreground">{new Date(tx.date).toLocaleDateString()}</p>
+                            </div>
                           </div>
-                        ))
-                      ) : (
-                        <p className="text-[10px] text-center py-4 text-muted-foreground uppercase tracking-widest">No active plans</p>
-                      )}
-                      <button className="w-full border border-primary text-primary py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-primary hover:text-white transition-colors">
-                        View All Plans
-                      </button>
+                          <p className={`text-sm font-bold ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                  </div>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">No transactions yet.</p>
+                  )}
                 </div>
 
-                {/* Transaction History */}
-                <div className="bg-muted p-6 border border-gray-200">
-                  <h3 className="text-xs font-bold uppercase tracking-widest mb-6">Transaction History</h3>
+                <div className="bg-muted border border-gray-200 p-6 sm:p-8">
+                  <h3 className="text-sm font-black uppercase tracking-tight mb-4">Send a Gift</h3>
                   <div className="space-y-4">
-                    {user.transactions.map((tx) => (
-                      <div key={tx.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-full ${tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                            {tx.amount > 0 ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold">{tx.description}</p>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{new Date(tx.date).toLocaleDateString()}</p>
-                          </div>
-                        </div>
-                        <p className={`font-black ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {tx.amount > 0 ? '+' : ''}₦{tx.amount.toLocaleString()}
-                        </p>
-                      </div>
-                    ))}
+                    <input type="email" placeholder="Recipient Email" value={giftEmail} onChange={(e) => setGiftEmail(e.target.value)} className="w-full bg-background border border-gray-300 p-3 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-accent" />
+                    <input type="number" placeholder="Amount (₦)" value={giftAmount} onChange={(e) => setGiftAmount(e.target.value)} className="w-full bg-background border border-gray-300 p-3 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-accent" />
+                    <button onClick={handleGiftSend} className="w-full bg-accent text-white py-3 text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-colors">
+                      <Gift className="w-4 h-4 inline mr-2" /> Send Gift
+                    </button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {activeTab === 'address' && (
-              <div className="space-y-8">
-                <div className="border-b pb-4">
-                  <h1 className="text-3xl font-black uppercase tracking-tight">Shipping Address</h1>
-                  <p className="text-muted-foreground text-sm">Your primary delivery destination.</p>
-                </div>
-                
-                <div className="bg-muted p-8 border border-gray-200 max-w-2xl">
-                  <form 
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleUpdateAddress(addressForm);
-                    }}
-                    className="space-y-6"
-                  >
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest mb-1 block">Street Address</label>
-                        <input 
-                          type="text" 
-                          required
-                          value={addressForm.street}
-                          onChange={(e) => setAddressForm({...addressForm, street: e.target.value})}
-                          className="w-full bg-background border border-gray-300 p-3 text-sm focus:outline-none focus:border-accent transition-colors"
-                          placeholder="House No, Street Name"
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-[10px] font-black uppercase tracking-widest mb-1 block">City</label>
-                          <input 
-                            type="text" 
-                            required
-                            value={addressForm.city}
-                            onChange={(e) => setAddressForm({...addressForm, city: e.target.value})}
-                            className="w-full bg-background border border-gray-300 p-3 text-sm focus:outline-none focus:border-accent transition-colors"
-                            placeholder="City"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-black uppercase tracking-widest mb-1 block">State / Region</label>
-                          <input 
-                            type="text" 
-                            required
-                            value={addressForm.state}
-                            onChange={(e) => setAddressForm({...addressForm, state: e.target.value})}
-                            className="w-full bg-background border border-gray-300 p-3 text-sm focus:outline-none focus:border-accent transition-colors"
-                            placeholder="State"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-[10px] font-black uppercase tracking-widest mb-1 block">ZIP / Postal Code</label>
-                          <input 
-                            type="text" 
-                            required
-                            value={addressForm.zipCode}
-                            onChange={(e) => setAddressForm({...addressForm, zipCode: e.target.value})}
-                            className="w-full bg-background border border-gray-300 p-3 text-sm focus:outline-none focus:border-accent transition-colors"
-                            placeholder="ZIP Code"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-black uppercase tracking-widest mb-1 block">Country</label>
-                          <select 
-                            value={addressForm.country}
-                            onChange={(e) => setAddressForm({...addressForm, country: e.target.value})}
-                            className="w-full bg-background border border-gray-300 p-3 text-sm focus:outline-none focus:border-accent transition-colors h-[46px]"
-                          >
-                            <option value="Nigeria">Nigeria</option>
-                            <option value="Ghana">Ghana</option>
-                            <option value="United Kingdom">United Kingdom</option>
-                            <option value="United States">United States</option>
-                            <option value="Canada">Canada</option>
-                          </select>
-                        </div>
-                      </div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-muted border border-gray-200 p-6 sm:p-8">
+                <h2 className="text-lg font-black uppercase tracking-tight mb-6">Saved Address</h2>
+                <div className="space-y-4">
+                  {[
+                    { label: 'Street Address', value: 'street' },
+                    { label: 'City', value: 'city' },
+                    { label: 'State', value: 'state' },
+                    { label: 'Zip Code', value: 'zipCode' },
+                    { label: 'Country', value: 'country' },
+                  ].map((field) => (
+                    <div key={field.value}>
+                      <label className="text-[10px] font-bold uppercase tracking-widest mb-1 block">{field.label}</label>
+                      <input
+                        type="text"
+                        value={(addressForm as any)[field.value]}
+                        onChange={(e) => setAddressForm({ ...addressForm, [field.value]: e.target.value })}
+                        className="w-full bg-background border border-gray-300 p-3 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-accent"
+                      />
                     </div>
-
-                    <button 
-                      type="submit"
-                      className="bg-primary text-primary-foreground px-12 py-4 text-xs font-black uppercase tracking-widest hover:bg-accent transition-colors"
-                    >
-                      Save Address
-                    </button>
-                  </form>
+                  ))}
+                  <button onClick={() => handleUpdateAddress(addressForm)} className="w-full bg-primary text-primary-foreground py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-colors">
+                    Save Address
+                  </button>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {activeTab === 'membership' && (
-              <div className="space-y-8">
-                <div className="border-b pb-4 flex justify-between items-end">
-                  <div>
-                    <h1 className="text-3xl font-black uppercase tracking-tight">Membership Status</h1>
-                    <p className="text-muted-foreground text-sm">Manage your subscription and perks.</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Current Level</p>
-                    <p className={`text-3xl font-black uppercase ${
-                      user.membership.level === 'platinum' ? 'text-indigo-600' : 
-                      user.membership.level === 'gold' ? 'text-yellow-500' : 
-                      user.membership.level === 'silver' ? 'text-gray-400' : 'text-muted-foreground'
-                    }`}>
-                      {user.membership.level === 'none' ? 'Guest' : user.membership.level}
-                    </p>
-                  </div>
-                </div>
-
-                {user.membership.status === 'active' ? (
-                  <div className="space-y-6">
-                    <div className="bg-muted p-8 border border-gray-200">
-                      <div className="flex items-center gap-4 mb-6">
-                        <Zap className="h-8 w-8 text-accent" />
-                        <div>
-                          <h3 className="font-black uppercase tracking-tight">Your Benefits are Active</h3>
-                          <p className="text-xs text-muted-foreground">Next renewal: {new Date(user.membership.nextBillingDate!).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Check className="h-4 w-4 text-green-500" />
-                          <span>Member-only discounts applied</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Check className="h-4 w-4 text-green-500" />
-                          <span>Free global shipping unlocked</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-4">
-                      <Link to="/membership" className="bg-primary text-primary-foreground px-8 py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-colors">
-                        Change Plan
-                      </Link>
-                      <button className="border border-gray-300 px-8 py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors">
-                        Cancel Membership
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                <div className="bg-muted border border-gray-200 p-6 sm:p-8">
+                  <h2 className="text-lg font-black uppercase tracking-tight mb-6">Membership</h2>
+                  {user.membership?.level && user.membership.level !== 'none' ? (
+                    <div className="text-center bg-background border border-gray-200 p-6">
+                      <Crown className="w-12 h-12 mx-auto mb-4 text-accent" />
+                      <p className="text-2xl font-black uppercase tracking-tight mb-2">{user.membership.level} Member</p>
+                      <p className="text-muted-foreground text-sm mb-4">Status: {user.membership.status}</p>
+                      {user.membership.nextBillingDate && (
+                        <p className="text-xs text-muted-foreground">Next billing: {new Date(user.membership.nextBillingDate).toLocaleDateString()}</p>
+                      )}
+                      <button onClick={() => navigate('/membership')} className="mt-6 bg-primary text-primary-foreground px-8 py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent">
+                        Manage Membership
                       </button>
                     </div>
+                  ) : (
+                    <div className="text-center bg-background border border-gray-200 p-6">
+                      <Crown className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-lg font-black uppercase tracking-tight mb-2">No Active Membership</p>
+                      <p className="text-muted-foreground text-sm mb-6">Upgrade to Silver, Gold, or Platinum for exclusive benefits.</p>
+                      <button onClick={() => navigate('/membership')} className="bg-primary text-primary-foreground px-8 py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent">
+                        View Plans
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'settings' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-muted border border-gray-200 p-6 sm:p-8">
+                <h2 className="text-lg font-black uppercase tracking-tight mb-6">Settings</h2>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between bg-background border border-gray-200 p-4">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-widest">Email Notifications</p>
+                      <p className="text-[10px] text-muted-foreground">Receive order updates and promotions</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" defaultChecked />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent" />
+                    </label>
                   </div>
-                ) : (
-                  <div className="bg-muted p-12 border border-gray-200 text-center">
-                    <Crown className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-xl font-black uppercase tracking-tight mb-4">Unlock Exclusive Perks</h3>
-                    <p className="text-muted-foreground mb-8 max-w-md mx-auto">Join the bllag community and enjoy priority access, special discounts, and luxury services.</p>
-                    <Link to="/membership" className="bg-primary text-primary-foreground px-12 py-4 text-sm font-bold uppercase tracking-widest hover:bg-accent transition-colors inline-block">
-                      View Membership Plans
-                    </Link>
-                  </div>
-                )}
-              </div>
+                  <button onClick={() => navigate('/security')} className="w-full bg-background border border-gray-300 py-4 text-xs font-bold uppercase tracking-widest hover:border-accent transition-colors flex items-center justify-center gap-2">
+                    <Shield className="w-4 h-4" /> Security Settings
+                  </button>
+                  <button onClick={() => navigate('/settings')} className="w-full bg-background border border-gray-300 py-4 text-xs font-bold uppercase tracking-widest hover:border-accent transition-colors">
+                    More Settings
+                  </button>
+                </div>
+              </motion.div>
             )}
 
             {activeTab === 'about' && (
-              <div className="space-y-8">
-                <div className="border-b pb-4">
-                  <h1 className="text-3xl font-black uppercase tracking-tight">About bllag</h1>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-muted border border-gray-200 p-6 sm:p-8">
+                <h2 className="text-lg font-black uppercase tracking-tight mb-6">About bllag</h2>
+                <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+                  <p>bllag is a luxury jewelry and high-end collections marketplace, delivering exceptional craftsmanship and timeless elegance.</p>
+                  <p>We offer a curated selection of royal gold collections, minimalist diamonds, and bespoke pieces, each with a certificate of authenticity.</p>
                 </div>
-                <div className="prose prose-sm max-w-none text-muted-foreground">
-                  <p className="text-lg">bllag is a premium jewelry brand dedicated to timeless elegance and modern craftsmanship.</p>
-                  <p>Founded in 2023, we focus on creating pieces that tell a story. Every item is handcrafted with precision and care, using the finest materials available.</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
-                    <div className="bg-muted p-8 border border-gray-200">
-                      <h3 className="text-primary font-black uppercase tracking-tight mb-4">Our Mission</h3>
-                      <p>To empower individuals through self-expression and beauty, one piece at a time.</p>
-                    </div>
-                    <div className="bg-muted p-8 border border-gray-200">
-                      <h3 className="text-primary font-black uppercase tracking-tight mb-4">Our Vision</h3>
-                      <p>To become the world's most trusted and beloved digital-first luxury jewelry brand.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              </motion.div>
             )}
 
             {activeTab === 'contact' && (
-              <div className="space-y-8">
-                <div className="border-b pb-4">
-                  <h1 className="text-3xl font-black uppercase tracking-tight">Contact Support</h1>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                  <div className="space-y-6">
-                    <p className="text-muted-foreground">Our support team is available 24/7 to assist you with any inquiries.</p>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-4">
-                        <Mail className="h-5 w-5 text-accent" />
-                        <div>
-                          <p className="text-[10px] uppercase tracking-widest font-bold">Email Us</p>
-                          <p className="text-sm">support@bllag.com</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <Phone className="h-5 w-5 text-accent" />
-                        <div>
-                          <p className="text-[10px] uppercase tracking-widest font-bold">Call Us</p>
-                          <p className="text-sm">+234 800 bllag HELP</p>
-                        </div>
-                      </div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-muted border border-gray-200 p-6 sm:p-8">
+                <h2 className="text-lg font-black uppercase tracking-tight mb-6">Contact Support</h2>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 bg-background border border-gray-200 p-4">
+                    <Mail className="w-5 h-5 text-accent" />
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-widest">Email</p>
+                      <p className="text-sm">support@bllag.xyz</p>
                     </div>
                   </div>
-                  <form className="space-y-4 bg-muted p-8 border border-gray-200">
-                    <input type="text" placeholder="Subject" className="w-full bg-background border border-gray-300 p-3 text-sm focus:outline-none focus:border-accent" />
-                    <textarea placeholder="Message" rows={4} className="w-full bg-background border border-gray-300 p-3 text-sm focus:outline-none focus:border-accent" />
-                    <button className="w-full bg-primary text-primary-foreground py-4 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-colors">
-                      Send Message
-                    </button>
-                  </form>
+                  <div className="flex items-center gap-3 bg-background border border-gray-200 p-4">
+                    <Phone className="w-5 h-5 text-accent" />
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-widest">Phone</p>
+                      <p className="text-sm">+234 800 BLAG</p>
+                    </div>
+                  </div>
+                  <button onClick={() => navigate('/help-center')} className="w-full bg-primary text-primary-foreground py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent">
+                    Visit Help Center
+                  </button>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {activeTab === 'agent' && (
-              <div className="space-y-8">
-                <div className="border-b pb-4">
-                  <h1 className="text-3xl font-black uppercase tracking-tight">Agent Dashboard</h1>
-                  <p className="text-muted-foreground text-sm">Manage your referrals and commissions.</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-muted p-6 border border-gray-200 text-center">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Total Referrals</p>
-                    <p className="text-3xl font-black">142</p>
-                  </div>
-                  <div className="bg-muted p-6 border border-gray-200 text-center">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Active Commissions</p>
-                    <p className="text-3xl font-black text-accent">₦42,500</p>
-                  </div>
-                  <div className="bg-muted p-6 border border-gray-200 text-center">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Conversion Rate</p>
-                    <p className="text-3xl font-black">12.4%</p>
-                  </div>
-                </div>
-                <div className="bg-muted p-8 border border-gray-200">
-                  <h3 className="text-xs font-bold uppercase tracking-widest mb-4">Your Referral Link</h3>
-                  <div className="flex gap-2">
-                    <input 
-                      readOnly 
-                      value={`https://bllag.com/?ref=${user.name.toLowerCase().replace(/\s+/g, '')}`}
-                      className="flex-1 bg-background border border-gray-300 p-3 text-xs font-mono"
-                    />
-                    <button className="bg-primary text-primary-foreground px-6 py-3 text-xs font-bold uppercase tracking-widest">Copy</button>
-                  </div>
-                </div>
-              </div>
-            )}
-            {activeTab === 'settings' && (
-              <div className="space-y-8">
-                <div className="border-b pb-4">
-                  <h1 className="text-3xl font-black uppercase tracking-tight">Account Settings</h1>
-                </div>
-                
-                <div className="max-w-xl space-y-6">
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-2">Display Name</label>
-                    <input 
-                      type="text" 
-                      defaultValue={user.name}
-                      className="w-full bg-background border border-gray-300 p-3 focus:outline-none focus:border-accent transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-2">Email Address</label>
-                    <input 
-                      type="email" 
-                      defaultValue={user.email}
-                      className="w-full bg-background border border-gray-300 p-3 focus:outline-none focus:border-accent transition-colors"
-                    />
-                  </div>
-                  <div className="pt-4">
-                    <button className="bg-primary text-primary-foreground px-8 py-4 text-sm font-bold uppercase tracking-widest hover:bg-accent transition-colors">
-                      Save Changes
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                <div className="bg-muted border border-gray-200 p-6 sm:p-8">
+                  <h2 className="text-lg font-black uppercase tracking-tight mb-6">Become a bllag Agent</h2>
+                  <div className="text-center bg-background border border-gray-200 p-8">
+                    <Shield className="w-16 h-16 mx-auto mb-6 text-accent" />
+                    <h3 className="text-xl font-black uppercase tracking-tight mb-4">Earn While You Share</h3>
+                    <p className="text-muted-foreground text-sm mb-6">Refer customers and earn commissions on every sale. Join our agent program today.</p>
+                    <button onClick={() => navigate('/affiliate')} className="bg-primary text-primary-foreground px-8 py-4 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-colors">
+                      Learn More
                     </button>
                   </div>
                 </div>
-              </div>
+                <div className="bg-muted border border-gray-200 p-6 sm:p-8">
+                  <h3 className="text-sm font-black uppercase tracking-tight mb-4">Your Referral Link</h3>
+                  <div className="bg-background border border-gray-200 p-4 flex items-center justify-between">
+                    <code className="text-xs">https://bllag.xyz/ref/{user.email}</code>
+                    <button onClick={copyReferralLink} className="text-accent text-xs font-bold uppercase tracking-widest hover:underline">Copy</button>
+                  </div>
+                </div>
+              </motion.div>
             )}
-          </motion.div>
-        </main>
+          </div>
+        </div>
       </div>
     </div>
   );

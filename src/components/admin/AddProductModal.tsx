@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Plus, X, Camera, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Plus, X, Image as ImageIcon } from 'lucide-react';
 import { Product } from '../../store';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../lib/firebase';
 
 interface AddProductModalProps {
   product?: Product | null;
@@ -12,8 +10,6 @@ interface AddProductModalProps {
 }
 
 export function AddProductModal({ product, onClose, onSave }: AddProductModalProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState<Omit<Product, 'id'>>({
     name: '',
     category: 'Necklaces',
@@ -39,25 +35,6 @@ export function AddProductModal({ product, onClose, onSave }: AddProductModalPro
     e.preventDefault();
     onSave(formData);
     onClose();
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setIsUploading(true);
-      const storageRef = ref(storage, `products/${Date.now()}_${file.name}`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      
-      setFormData({ ...formData, image: downloadURL });
-    } catch (error) {
-      console.error('Upload failed:', error);
-      alert('Failed to upload image. Please try again.');
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   return (
@@ -139,22 +116,7 @@ export function AddProductModal({ product, onClose, onSave }: AddProductModalPro
                         className="flex-1 bg-gray-50 border border-gray-200 p-4 text-[10px] font-black uppercase tracking-widest focus:outline-none focus:border-accent"
                         placeholder="Image URL"
                       />
-                      <button 
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading}
-                        className="bg-primary text-white p-4 hover:bg-accent transition-colors disabled:opacity-50"
-                        title="Upload real image"
-                      >
-                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                      </button>
-                      <input 
-                        type="file" 
-                        ref={fileInputRef}
-                        onChange={handleImageUpload}
-                        accept="image/*"
-                        className="hidden"
-                      />
+
                     </div>
                   </div>
                 </div>

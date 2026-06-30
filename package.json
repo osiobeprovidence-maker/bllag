@@ -11,7 +11,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@firebase/eslint-plugin-security-rules": "^0.0.2",
+    "@clerk/react": "^6.11.2",
     "@google/genai": "^2.4.0",
     "@mux/mux-player-react": "^3.13.0",
     "@tailwindcss/vite": "^4.1.14",
@@ -20,7 +20,6 @@
     "convex": "^1.42.0",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
-    "firebase": "^11.4.0",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "react": "^19.0.1",

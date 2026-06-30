@@ -1,12 +1,23 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
-export const getByFirebaseUid = query({
-  args: { firebaseUid: v.string() },
+export const getMe = query({
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+    return await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .first();
+  },
+});
+
+export const getByClerkId = query({
+  args: { clerkId: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
       .query("users")
-      .withIndex("by_firebase_uid", (q) => q.eq("firebaseUid", args.firebaseUid))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
       .first();
   },
 });
@@ -23,7 +34,6 @@ export const getByEmail = query({
 
 export const upsert = mutation({
   args: {
-    firebaseUid: v.string(),
     name: v.string(),
     email: v.string(),
     role: v.string(),
@@ -40,9 +50,13 @@ export const upsert = mutation({
     ),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const clerkId = identity.subject;
+
     const existing = await ctx.db
       .query("users")
-      .withIndex("by_firebase_uid", (q) => q.eq("firebaseUid", args.firebaseUid))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
       .first();
 
     if (existing) {
@@ -58,7 +72,11 @@ export const upsert = mutation({
     }
 
     return await ctx.db.insert("users", {
-      ...args,
+      clerkId,
+      name: args.name,
+      email: args.email,
+      role: args.role,
+      profileImage: args.profileImage,
       walletBalance: args.walletBalance ?? 50000,
       emailVerified: false,
     });
@@ -67,14 +85,17 @@ export const upsert = mutation({
 
 export const setVerificationToken = mutation({
   args: {
-    firebaseUid: v.string(),
     token: v.string(),
     expiresAt: v.number(),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const clerkId = identity.subject;
+
     const existing = await ctx.db
       .query("users")
-      .withIndex("by_firebase_uid", (q) => q.eq("firebaseUid", args.firebaseUid))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
       .first();
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -114,7 +135,6 @@ export const verifyEmail = mutation({
 
 export const updateProfile = mutation({
   args: {
-    firebaseUid: v.string(),
     name: v.optional(v.string()),
     profileImage: v.optional(v.string()),
     address: v.optional(
@@ -128,27 +148,33 @@ export const updateProfile = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const { firebaseUid, ...fields } = args;
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const clerkId = identity.subject;
+
     const existing = await ctx.db
       .query("users")
-      .withIndex("by_firebase_uid", (q) => q.eq("firebaseUid", firebaseUid))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, fields);
+      await ctx.db.patch(existing._id, args);
     }
   },
 });
 
 export const updateBalance = mutation({
   args: {
-    firebaseUid: v.string(),
     amount: v.number(),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const clerkId = identity.subject;
+
     const existing = await ctx.db
       .query("users")
-      .withIndex("by_firebase_uid", (q) => q.eq("firebaseUid", args.firebaseUid))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
       .first();
 
     if (existing) {

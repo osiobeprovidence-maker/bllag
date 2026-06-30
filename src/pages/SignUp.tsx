@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { useSignUp } from '@clerk/react';
 import { useMutation, useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { auth, authPersistenceReady, getAuthErrorMessage } from '../lib/firebase';
 import { useAuthStore } from '../store';
 
 export function SignUp() {
@@ -13,9 +12,10 @@ export function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const setUser = useAuthStore((state) => state.setUser);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const navigate = useNavigate();
+  const { signUp, fetchStatus } = useSignUp();
+  const upsertUser = useMutation(api.users.upsert);
   const setVerificationToken = useMutation(api.users.setVerificationToken);
   const sendVerificationEmail = useAction(api.emails.sendVerificationEmail);
 
@@ -25,68 +25,56 @@ export function SignUp() {
     }
   }, [navigate, isAuthenticated]);
 
-  const sendVerification = async (firebaseUid: string, userEmail: string, userName: string) => {
+  const sendVerification = async (userEmail: string, userName: string) => {
     const token = crypto.randomUUID();
     const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
-    await setVerificationToken({ firebaseUid, token, expiresAt });
+    await setVerificationToken({ token, expiresAt });
     await sendVerificationEmail({ email: userEmail, name: userName, token });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!signUp) return;
     try {
-      await authPersistenceReady;
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(userCredential.user, { displayName: name });
-      const firebaseUser = userCredential.user;
-      const role = firebaseUser.email === 'riderezzy@gmail.com' ? 'admin' : 'customer';
-      setUser({
-        name: firebaseUser.displayName || name,
-        email: firebaseUser.email || '',
-        role: role as any,
-        emailVerified: false,
-        walletBalance: 50000,
-        transactions: [],
-        installments: [],
-        membership: { level: 'none', status: 'inactive' },
-      });
-      await sendVerification(firebaseUser.uid, firebaseUser.email || email, name);
-      navigate('/verify-email');
+      const [firstName, ...lastParts] = name.trim().split(' ');
+      const lastName = lastParts.join(' ');
+      const result = await signUp.create({ emailAddress: email, password, firstName: firstName || undefined, lastName: lastName || undefined });
+      if (result.error) {
+        setError(result.error.message);
+        return;
+      }
+      if (signUp.status === 'complete') {
+        const role = email === 'riderezzy@gmail.com' ? 'admin' : 'customer';
+        await signUp.finalize();
+        await upsertUser({ name, email, role, walletBalance: 50000 });
+        await sendVerification(email, name);
+        navigate('/verify-email');
+      } else {
+        setError('Please complete all required fields.');
+      }
     } catch (err: unknown) {
-      setError(getAuthErrorMessage(err, 'Failed to create account. Please try again.'));
+      const message = err instanceof Error ? err.message : 'Failed to create account';
+      setError(message);
     }
   };
 
   const handleGoogleSignUp = async () => {
     setError(null);
+    if (!signUp) return;
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      await authPersistenceReady;
-      const result = await signInWithPopup(auth, provider);
-      const role = result.user.email === 'riderezzy@gmail.com' ? 'admin' : 'customer';
-      setUser({
-        name: result.user.displayName || 'User',
-        email: result.user.email || '',
-        role,
-        emailVerified: result.user.emailVerified,
-        walletBalance: 50000,
-        transactions: [],
-        installments: [],
-        membership: { level: 'none', status: 'inactive' },
+      await signUp.sso({
+        strategy: 'oauth_google',
+        redirectUrl: `${window.location.origin}/sso-callback`,
+        redirectCallbackUrl: `${window.location.origin}/sso-callback`,
       });
-      if (!result.user.emailVerified) {
-        await sendVerification(result.user.uid, result.user.email || '', result.user.displayName || 'User');
-        navigate('/verify-email');
-      } else {
-        navigate('/', { replace: true });
-      }
     } catch (err: unknown) {
-      console.error('[Auth] Google sign-up failed:', err);
-      setError(getAuthErrorMessage(err, 'Failed to sign up with Google. Please try again.'));
+      const message = err instanceof Error ? err.message : 'Google sign-up failed';
+      setError(message);
     }
   };
+
+  if (fetchStatus === 'fetching') return null;
 
   return (
     <div className="pt-32 pb-24 min-h-screen flex items-center justify-center bg-background px-4">

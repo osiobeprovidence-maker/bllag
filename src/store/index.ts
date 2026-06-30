@@ -1,9 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { signOut } from 'firebase/auth';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db, auth } from '../lib/firebase';
-
 type UserRole = 'admin' | 'customer' | 'agent';
 
 interface Transaction {
@@ -79,7 +75,6 @@ export const useAuthStore = create<AuthState>()(
         } 
       }),
       logout: () => {
-        signOut(auth).catch((err) => console.error('Sign out error:', err));
         set({ isAuthenticated: false, user: null });
       },
       setUser: (user) => set({ 
@@ -110,12 +105,6 @@ export const useAuthStore = create<AuthState>()(
           nextBillingDate: level === 'none' ? undefined : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
         };
 
-        if (auth.currentUser) {
-          updateDoc(doc(db, 'users', auth.currentUser.uid), {
-            membership: newMembership
-          }).catch(err => console.error("Error updating membership in Firestore:", err));
-        }
-
         return {
           user: {
             ...state.user,
@@ -125,12 +114,6 @@ export const useAuthStore = create<AuthState>()(
       }),
       updateAddress: (address) => set((state) => {
         if (!state.user) return state;
-
-        if (auth.currentUser) {
-          updateDoc(doc(db, 'users', auth.currentUser.uid), {
-            address: address
-          }).catch(err => console.error("Error updating address in Firestore:", err));
-        }
 
         return {
           user: {
@@ -180,16 +163,6 @@ export const useAuthStore = create<AuthState>()(
 
         const newBalance = state.user.walletBalance + amount;
         const newTransactions = [newTransaction, ...state.user.transactions];
-
-        // Persist to Firestore if logged in
-        if (auth.currentUser) {
-          const updates: any = {
-            walletBalance: newBalance,
-            transactions: newTransactions,
-            installments: installments
-          };
-          updateDoc(doc(db, 'users', auth.currentUser.uid), updates).catch(err => console.error("Error updating balance in Firestore:", err));
-        }
 
         return {
           user: {

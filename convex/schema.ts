@@ -25,6 +25,7 @@ export default defineSchema({
     emailVerified: v.boolean(),
     verificationToken: v.optional(v.string()),
     verificationTokenExpires: v.optional(v.number()),
+    clerkId: v.optional(v.string()),
     firebaseUid: v.optional(v.string()),
     address: v.optional(
       v.object({
@@ -35,7 +36,8 @@ export default defineSchema({
         country: v.string(),
       })
     ),
-  }).index("by_firebase_uid", ["firebaseUid"])
+  }).index("by_clerk_id", ["clerkId"])
+    .index("by_firebase_uid", ["firebaseUid"])
     .index("by_email", ["email"]),
 
   orders: defineTable({

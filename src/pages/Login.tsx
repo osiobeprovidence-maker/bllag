@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, authPersistenceReady, getAuthErrorMessage } from '../lib/firebase';
+import { useSignIn } from '@clerk/react';
 import { useAuthStore } from '../store';
 
 export function Login() {
@@ -10,9 +9,9 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const setUser = useAuthStore((state) => state.setUser);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const navigate = useNavigate();
+  const { signIn, fetchStatus } = useSignIn();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -23,49 +22,38 @@ export function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!signIn) return;
     try {
-      await authPersistenceReady;
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-      const role = firebaseUser.email === 'riderezzy@gmail.com' ? 'admin' : 'customer';
-      setUser({
-        name: firebaseUser.displayName || 'User',
-        email: firebaseUser.email || '',
-        role: role as any,
-        walletBalance: 50000,
-        transactions: [],
-        installments: [],
-        membership: { level: 'none', status: 'inactive' },
-      });
-      navigate('/', { replace: true });
+      const result = await signIn.create({ identifier: email, password });
+      if (result.error) {
+        setError(result.error.message);
+        return;
+      }
+      if (signIn.status === 'complete') {
+        await signIn.finalize();
+      }
     } catch (err: unknown) {
-      setError(getAuthErrorMessage(err, 'Failed to sign in. Please try again.'));
+      const message = err instanceof Error ? err.message : 'Failed to sign in';
+      setError(message);
     }
   };
 
   const handleGoogleLogin = async () => {
     setError(null);
+    if (!signIn) return;
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      await authPersistenceReady;
-      const result = await signInWithPopup(auth, provider);
-      const role = result.user.email === 'riderezzy@gmail.com' ? 'admin' : 'customer';
-      setUser({
-        name: result.user.displayName || 'User',
-        email: result.user.email || '',
-        role,
-        walletBalance: 50000,
-        transactions: [],
-        installments: [],
-        membership: { level: 'none', status: 'inactive' },
+      await signIn.sso({
+        strategy: 'oauth_google',
+        redirectUrl: `${window.location.origin}/sso-callback`,
+        redirectCallbackUrl: `${window.location.origin}/sso-callback`,
       });
-      navigate('/', { replace: true });
     } catch (err: unknown) {
-      console.error('[Auth] Google sign-in failed:', err);
-      setError(getAuthErrorMessage(err, 'Failed to sign in with Google. Please try again.'));
+      const message = err instanceof Error ? err.message : 'Google sign-in failed';
+      setError(message);
     }
   };
+
+  if (fetchStatus === 'fetching') return null;
 
   return (
     <div className="pt-32 pb-24 min-h-screen flex items-center justify-center bg-background px-4">

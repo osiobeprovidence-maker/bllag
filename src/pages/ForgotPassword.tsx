@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { useSignIn } from '@clerk/react';
 import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 export function ForgotPassword() {
@@ -10,14 +9,25 @@ export function ForgotPassword() {
   const [isSent, setIsSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useSignIn();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    if (!signIn) return;
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      const result = await signIn.create({ identifier: email });
+      if (result.error) {
+        setError(result.error.message);
+        return;
+      }
+      const sendResult = await signIn.resetPasswordEmailCode.sendCode();
+      if (sendResult.error) {
+        setError(sendResult.error.message);
+        return;
+      }
       setIsSent(true);
     } catch (err: any) {
       setError(err.message || 'Failed to send reset email');
@@ -39,7 +49,7 @@ export function ForgotPassword() {
           </Link>
           <h1 className="text-2xl font-black uppercase tracking-tight mb-3">Recover Access</h1>
           <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest leading-relaxed">
-            Enter your email to receive a recovery link
+            Enter your email to receive a recovery code
           </p>
         </div>
 
@@ -50,13 +60,13 @@ export function ForgotPassword() {
             </div>
             <h2 className="text-lg font-black uppercase tracking-tight mb-2">Check your inbox</h2>
             <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest leading-relaxed mb-8">
-              We've sent recovery instructions to <strong>{email}</strong>
+              We've sent a recovery code to <strong>{email}</strong>
             </p>
             <Link 
-              to="/login"
+              to="/reset-password"
               className="block w-full bg-primary text-white py-4 text-[10px] font-black uppercase tracking-widest hover:bg-accent transition-all"
             >
-              Back to Login
+              Enter Reset Code
             </Link>
           </div>
         ) : (
@@ -81,10 +91,10 @@ export function ForgotPassword() {
 
             <button 
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !signIn}
               className="w-full bg-primary text-white py-5 text-[10px] font-black uppercase tracking-widest hover:bg-accent transition-all disabled:opacity-50"
             >
-              {isLoading ? 'Processing Access...' : 'Send Recovery Link'}
+              {isLoading ? 'Processing Access...' : 'Send Recovery Code'}
             </button>
 
             <Link 

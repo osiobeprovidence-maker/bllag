@@ -16,7 +16,7 @@ export const sendVerificationEmail = action({
       return { sent: false };
     }
 
-    const verifyUrl = `https://bllag.vercel.app/verify-email?token=${args.token}&email=${encodeURIComponent(args.email)}`;
+    const verifyUrl = `https://www.bllag.xyz/verify-email?token=${args.token}&email=${encodeURIComponent(args.email)}`;
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -25,7 +25,7 @@ export const sendVerificationEmail = action({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "bllag <noreply@bllag.ng>",
+        from: "bllag <noreply@bllag.xyz>",
         to: args.email,
         subject: "Verify your email — bllag",
         html: `
@@ -68,7 +68,7 @@ export const sendWelcomeEmail = action({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "bllag <noreply@bllag.ng>",
+        from: "bllag <noreply@bllag.xyz>",
         to: args.email,
         subject: "Welcome to bllag",
         html: `
@@ -76,7 +76,7 @@ export const sendWelcomeEmail = action({
             <h1 style="font-size:24px;font-weight:900;text-transform:uppercase;letter-spacing:-1px">Welcome to bllag, ${args.name}.</h1>
             <p style="color:#666">You're now part of the bllag universe — where every piece tells a story.</p>
             <p style="color:#666">Browse our latest collections and discover jewelry crafted with precision and elegance.</p>
-            <a href="https://bllag.vercel.app/shop" style="display:inline-block;background:#000;color:#fff;padding:12px 32px;text-decoration:none;text-transform:uppercase;font-size:12px;letter-spacing:2px;margin-top:16px">Explore the Collection</a>
+            <a href="https://www.bllag.xyz/shop" style="display:inline-block;background:#000;color:#fff;padding:12px 32px;text-decoration:none;text-transform:uppercase;font-size:12px;letter-spacing:2px;margin-top:16px">Explore the Collection</a>
             <p style="color:#999;font-size:12px;margin-top:32px">bllag — Luxury Jewelry & High-End Collections</p>
           </div>
         `,
@@ -127,7 +127,7 @@ export const sendOrderConfirmation = action({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "bllag <orders@bllag.ng>",
+        from: "bllag <orders@bllag.xyz>",
         to: args.email,
         subject: `Order Confirmed — #${args.orderId}`,
         html: `

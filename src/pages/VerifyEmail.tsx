@@ -4,15 +4,16 @@ import { motion } from 'motion/react';
 import { useMutation, useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useAuthStore } from '../store';
-import { auth } from '../lib/firebase';
+import { useUser } from '@clerk/react';
 
 export function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const user = useAuthStore((s) => s.user);
+  const { user: clerkUser, isLoaded } = useUser();
+  const storeUser = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const verifyEmail = useMutation(api.users.verifyEmail);
-  const setVerificationToken = useMutation(api.users.setVerificationToken);
+  const setVerificationTokenMut = useMutation(api.users.setVerificationToken);
   const sendVerificationEmail = useAction(api.emails.sendVerificationEmail);
   const [status, setStatus] = useState<'pending' | 'verifying' | 'verified' | 'error'>('pending');
   const [message, setMessage] = useState('');
@@ -28,8 +29,8 @@ export function VerifyEmail() {
           if (result.verified) {
             setStatus('verified');
             setMessage('Your email has been verified!');
-            if (user) {
-              setUser({ ...user, emailVerified: true });
+            if (storeUser) {
+              setUser({ ...storeUser, emailVerified: true });
             }
             setTimeout(() => navigate('/', { replace: true }), 3000);
           }
@@ -42,18 +43,18 @@ export function VerifyEmail() {
       setStatus('pending');
       setMessage('Check your inbox for the verification email.');
     }
-  }, [token, emailParam, verifyEmail, navigate, user, setUser]);
+  }, [token, emailParam, verifyEmail, navigate, storeUser, setUser]);
 
   const handleResend = async () => {
-    if (!auth.currentUser || !user) {
+    if (!isLoaded || !clerkUser || !storeUser) {
       setMessage('You must be logged in to resend verification.');
       return;
     }
     try {
       const newToken = crypto.randomUUID();
       const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
-      await setVerificationToken({ firebaseUid: auth.currentUser.uid, token: newToken, expiresAt });
-      await sendVerificationEmail({ email: user.email, name: user.name, token: newToken });
+      await setVerificationTokenMut({ token: newToken, expiresAt });
+      await sendVerificationEmail({ email: storeUser.email, name: storeUser.name, token: newToken });
       setMessage('Verification email sent! Check your inbox.');
     } catch (err: any) {
       setMessage(err.message || 'Failed to resend verification.');
