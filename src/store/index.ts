@@ -35,6 +35,9 @@ interface UserData {
   profileImage?: string;
   walletBalance: number;
   hasPassword?: boolean;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
+  phone?: string;
   transactions: Transaction[];
   installments: InstallmentPlan[];
   membership: Membership;
@@ -98,6 +101,8 @@ export const useAuthStore = create<AuthState>()(
           profileImage: user.profileImage,
           walletBalance: user.walletBalance ?? 0,
           hasPassword: user.hasPassword ?? false,
+          emailVerified: user.emailVerified ?? false,
+          phoneVerified: user.phoneVerified ?? false,
           transactions: user.transactions ?? [],
           installments: user.installments ?? [],
           membership: user.membership ?? { level: 'none', status: 'inactive' }

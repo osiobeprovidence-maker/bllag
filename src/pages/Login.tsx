@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { useAction, useMutation, useQuery } from 'convex/react';
+import { useAction, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useAuthStore } from '../store';
-import { Mail, Lock, CheckCircle2, ArrowRight } from 'lucide-react';
+
+type Step = 'choose' | 'magic-link' | 'magic-link-sent' | 'password' | 'forgot-password';
 
 export function Login() {
-  const [step, setStep] = useState<'email' | 'password' | 'magic-link-sent'>('email');
+  const [step, setStep] = useState<Step>('choose');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -19,27 +20,12 @@ export function Login() {
   const loginWithPassword = useMutation(api.auth.loginWithPassword);
   const setUser = useAuthStore((s) => s.setUser);
   const setSessionId = useAuthStore((s) => s.setSessionId);
-  const passwordStatus = useQuery(api.auth.checkUserPasswordStatus,
-    step === 'email' && email.includes('@') ? { email } : 'skip');
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/', { replace: true });
     }
   }, [navigate, isAuthenticated]);
-
-  const handleEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!passwordStatus) {
-      setError('Checking account...');
-      return;
-    }
-    if (passwordStatus.hasPassword) {
-      setStep('password');
-    } else {
-      handleSendMagicLink();
-    }
-  };
 
   const handleSendMagicLink = async () => {
     setIsLoading(true);
@@ -52,11 +38,28 @@ export function Login() {
         setError('Failed to send magic link. Please try again.');
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to send magic link';
-      setError(message);
+      setError(err instanceof Error ? err.message : 'Failed to send magic link');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleMagicLinkSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.includes('@')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    handleSendMagicLink();
+  };
+
+  const handleForgotPasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.includes('@')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    handleSendMagicLink();
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -71,8 +74,9 @@ export function Login() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed';
       if (message === 'no_password') {
-        setStep('email');
-        setError('This account uses Magic Link login.');
+        setError('No password set for this account. Use the magic link option instead.');
+      } else if (message === 'No account found with this email.') {
+        setError('No account found with this email.');
       } else {
         setError(message);
       }
@@ -81,132 +85,216 @@ export function Login() {
     }
   };
 
+  const stepTitle: Record<Step, string> = {
+    choose: 'Sign In',
+    'magic-link': 'Sign In',
+    'magic-link-sent': 'Check your email',
+    password: 'Sign In',
+    'forgot-password': 'Reset your password',
+  };
+
   return (
-    <div className="pt-32 pb-24 min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen bg-black flex items-center justify-center px-4 py-24">
       <motion.div
+        key={step}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-md w-full bg-muted p-8 border border-gray-200"
+        transition={{ duration: 0.35 }}
+        className="w-full max-w-sm"
       >
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-black uppercase tracking-tight mb-2">
-            {step === 'email' && 'Sign In'}
-            {step === 'password' && 'Enter Password'}
-            {step === 'magic-link-sent' && 'Check Your Email'}
+        <div className="bg-zinc-900 rounded-lg p-12">
+          <h1 className="text-3xl font-bold text-white mb-7">
+            {stepTitle[step]}
           </h1>
-          <p className="text-muted-foreground text-sm">
-            {step === 'email' && 'Enter your email to continue.'}
-            {step === 'password' && `Welcome back, ${email}`}
-            {step === 'magic-link-sent' && 'Magic link sent! Click it to sign in.'}
-          </p>
+
+          {error && (
+            <div className="bg-[#E87C03] bg-opacity-20 border border-[#E87C03] rounded p-3 mb-4">
+              <p className="text-[#E87C03] text-sm">{error}</p>
+            </div>
+          )}
+
+          {step === 'choose' && (
+            <div>
+              <p className="text-sm text-zinc-400 mb-8">
+                Choose how you'd like to sign in.
+              </p>
+              <div className="space-y-4">
+                <button
+                  onClick={() => setStep('magic-link')}
+                  className="w-full bg-[#E50914] hover:bg-[#f6121d] text-white font-semibold rounded py-3.5 text-sm transition-colors"
+                >
+                  Continue with Magic Link
+                </button>
+                <p className="text-center text-xs text-zinc-500 uppercase tracking-wider">or</p>
+                <button
+                  onClick={() => setStep('password')}
+                  className="w-full border border-zinc-600 hover:border-zinc-500 text-white font-semibold rounded py-3.5 text-sm transition-colors"
+                >
+                  Sign in with Password
+                </button>
+              </div>
+              <p className="text-xs text-zinc-500 mt-8 leading-relaxed">
+                By signing in, you agree to our{' '}
+                <Link to="/terms" className="text-zinc-400 hover:underline">Terms of Use</Link>
+                {' '}and{' '}
+                <Link to="/privacy" className="text-zinc-400 hover:underline">Privacy Policy</Link>.
+              </p>
+            </div>
+          )}
+
+          {step === 'magic-link' && (
+            <div>
+              <p className="text-sm text-zinc-400 mb-6">
+                Receive a secure sign-in link in your email.
+              </p>
+              <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
+                <div>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Email"
+                    className="w-full bg-zinc-800 text-white border border-zinc-700 rounded px-4 py-3.5 text-sm focus:outline-none focus:border-white transition-colors placeholder:text-zinc-500"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-[#E50914] hover:bg-[#f6121d] text-white font-semibold rounded py-3 text-sm transition-colors disabled:opacity-50"
+                >
+                  {isLoading ? 'Sending...' : 'Send Magic Link'}
+                </button>
+              </form>
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => { setStep('choose'); setError(null); }}
+                  className="text-zinc-400 text-sm hover:underline"
+                >
+                  Back to sign in options
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 'magic-link-sent' && (
+            <div>
+              <div className="bg-zinc-800 rounded p-4 mb-6">
+                <p className="text-sm text-zinc-300 mb-1">
+                  We've sent a secure sign-in link to <span className="text-white font-medium">{email}</span>.
+                </p>
+                <p className="text-xs text-zinc-500">Expires in 15 minutes.</p>
+              </div>
+              <div className="text-center space-y-3">
+                <button
+                  onClick={handleSendMagicLink}
+                  disabled={isLoading}
+                  className="text-zinc-400 text-sm hover:underline"
+                >
+                  Resend email
+                </button>
+                <div>
+                  <button
+                    onClick={() => { setStep('choose'); setEmail(''); setError(null); }}
+                    className="text-zinc-400 text-sm hover:underline"
+                  >
+                    Back to sign in options
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 'password' && (
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email"
+                  className="w-full bg-zinc-800 text-white border border-zinc-700 rounded px-4 py-3.5 text-sm focus:outline-none focus:border-white transition-colors placeholder:text-zinc-500"
+                />
+              </div>
+              <div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  className="w-full bg-zinc-800 text-white border border-zinc-700 rounded px-4 py-3.5 text-sm focus:outline-none focus:border-white transition-colors placeholder:text-zinc-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-xs text-zinc-500 hover:text-zinc-300 mt-1.5 ml-1"
+                >
+                  {showPassword ? 'Hide' : 'Show'} password
+                </button>
+              </div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-[#E50914] hover:bg-[#f6121d] text-white font-semibold rounded py-3 text-sm transition-colors disabled:opacity-50"
+              >
+                {isLoading ? 'Signing in...' : 'Sign In'}
+              </button>
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setStep('forgot-password'); setError(null); setEmail(email); }}
+                  className="text-zinc-400 text-sm hover:underline"
+                >
+                  Forgot Password?
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setStep('choose'); setError(null); }}
+                  className="text-zinc-400 text-sm hover:underline"
+                >
+                  Use Magic Link Instead
+                </button>
+              </div>
+            </form>
+          )}
+
+          {step === 'forgot-password' && (
+            <div>
+              <p className="text-sm text-zinc-400 mb-6">
+                Enter your email and we'll send you a link to create a new password.
+              </p>
+              <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+                <div>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Email"
+                    className="w-full bg-zinc-800 text-white border border-zinc-700 rounded px-4 py-3.5 text-sm focus:outline-none focus:border-white transition-colors placeholder:text-zinc-500"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-[#E50914] hover:bg-[#f6121d] text-white font-semibold rounded py-3 text-sm transition-colors disabled:opacity-50"
+                >
+                  {isLoading ? 'Sending...' : 'Send Reset Link'}
+                </button>
+              </form>
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => { setStep('password'); setError(null); }}
+                  className="text-zinc-400 text-sm hover:underline"
+                >
+                  Back to sign in
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 text-xs font-bold uppercase tracking-widest">
-            {error}
-          </div>
-        )}
-
-        {step === 'email' && (
-          <form onSubmit={handleEmailSubmit} className="space-y-6">
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="EMAIL ADDRESS"
-                className="w-full bg-background border border-gray-300 pl-12 pr-4 py-4 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-accent transition-colors"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-primary text-primary-foreground py-5 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {isLoading ? 'Checking...' : 'Continue'} <ArrowRight className="h-4 w-4" />
-            </button>
-
-            <p className="text-center text-xs text-muted-foreground">
-              By signing in, you agree to our{' '}
-              <Link to="/terms" className="text-accent hover:underline">Terms</Link>
-              {' '}and{' '}
-              <Link to="/privacy" className="text-accent hover:underline">Privacy Policy</Link>.
-            </p>
-          </form>
-        )}
-
-        {step === 'password' && (
-          <form onSubmit={handlePasswordSubmit} className="space-y-6">
-            <button
-              type="button"
-              onClick={() => setStep('email')}
-              className="text-xs font-bold uppercase tracking-widest text-accent hover:underline mb-4 block"
-            >
-              ← Use a different email
-            </button>
-
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="PASSWORD"
-                className="w-full bg-background border border-gray-300 pl-12 pr-12 py-4 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-accent transition-colors"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-accent text-[10px] font-bold uppercase tracking-widest"
-              >
-                {showPassword ? 'HIDE' : 'SHOW'}
-              </button>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-primary text-primary-foreground py-5 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-all disabled:opacity-50"
-            >
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </button>
-
-            <div className="text-center space-y-2">
-              <button
-                type="button"
-                onClick={handleSendMagicLink}
-                className="text-xs font-bold uppercase tracking-widest text-accent hover:underline"
-              >
-                Send magic link instead
-              </button>
-            </div>
-          </form>
-        )}
-
-        {step === 'magic-link-sent' && (
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 className="h-8 w-8 text-white" />
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">
-              Magic link sent to <strong className="text-primary">{email}</strong>
-            </p>
-            <p className="text-xs text-muted-foreground mb-8">
-              Expires in 15 minutes.
-            </p>
-            <button
-              onClick={() => { setStep('email'); setEmail(''); setError(null); }}
-              className="text-xs font-bold uppercase tracking-widest text-accent hover:underline"
-            >
-              Use a different email
-            </button>
-          </div>
-        )}
       </motion.div>
     </div>
   );

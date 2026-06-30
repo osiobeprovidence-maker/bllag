@@ -85,7 +85,7 @@ export function Profile() {
     <div className="pt-32 pb-24 min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Header */}
-        <div className="bg-muted border border-gray-200 p-6 sm:p-8 mb-8">
+        <div className="bg-muted border border-gray-200 p-6 sm:p-8 mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             <div className="relative">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-3xl font-black overflow-hidden">
@@ -120,7 +120,7 @@ export function Profile() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <nav className="space-y-1 bg-muted border border-gray-200 p-4">

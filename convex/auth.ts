@@ -61,10 +61,15 @@ function validatePasswordStrength(password: string): void {
   if (!/[A-Z]/.test(password)) throw new Error("Password must contain an uppercase letter.");
   if (!/[a-z]/.test(password)) throw new Error("Password must contain a lowercase letter.");
   if (!/[0-9]/.test(password)) throw new Error("Password must contain a number.");
+  if (!/[^A-Za-z0-9]/.test(password)) throw new Error("Password must contain a special character.");
+}
+
+function isValidSession(session: { expiresAt: number } | null): session is { sessionId: string; userId: string; createdAt: number; expiresAt: number } {
+  return !!session && session.expiresAt >= Date.now();
 }
 
 export const sendMagicLink = action({
-  args: { email: v.string() },
+  args: { email: v.string(), redirect: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const email = args.email.toLowerCase().trim();
 
@@ -88,7 +93,10 @@ export const sendMagicLink = action({
       return { sent: false };
     }
 
-    const magicLink = `https://www.bllag.xyz/auth/verify?token=${rawToken}&email=${encodeURIComponent(email)}`;
+    let magicLink = `https://www.bllag.xyz/auth/verify?token=${rawToken}&email=${encodeURIComponent(email)}`;
+    if (args.redirect) {
+      magicLink += `&redirect=${encodeURIComponent(args.redirect)}`;
+    }
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -183,13 +191,14 @@ export const verifyMagicLink = mutation({
     const role = email === "riderezzy@gmail.com" ? "admin" : "customer";
 
     if (user) {
-      await ctx.db.patch(user._id, { name, role });
+      await ctx.db.patch(user._id, { name, role, emailVerified: true });
     } else {
       const userId = await ctx.db.insert("users", {
         name,
         email,
         role,
         walletBalance: 0,
+        emailVerified: true,
       });
       user = await ctx.db.get(userId);
     }
@@ -214,6 +223,9 @@ export const verifyMagicLink = mutation({
         profileImage: user.profileImage,
         walletBalance: user.walletBalance,
         address: user.address,
+        phone: user.phone,
+        emailVerified: user.emailVerified ?? false,
+        phoneVerified: user.phoneVerified ?? false,
         hasPassword: !!user.passwordHash,
       },
     };
@@ -242,6 +254,9 @@ export const getSession = query({
       profileImage: user.profileImage,
       walletBalance: user.walletBalance,
       address: user.address,
+      phone: user.phone,
+      emailVerified: user.emailVerified ?? false,
+      phoneVerified: user.phoneVerified ?? false,
       hasPassword: !!user.passwordHash,
     };
   },
@@ -271,6 +286,8 @@ export const checkUserPasswordStatus = query({
     return {
       exists: !!user,
       hasPassword: !!user?.passwordHash,
+      emailVerified: user?.emailVerified ?? false,
+      phoneVerified: user?.phoneVerified ?? false,
     };
   },
 });
@@ -311,6 +328,9 @@ export const loginWithPassword = mutation({
         profileImage: user.profileImage,
         walletBalance: user.walletBalance,
         address: user.address,
+        phone: user.phone,
+        emailVerified: user.emailVerified ?? false,
+        phoneVerified: user.phoneVerified ?? false,
         hasPassword: true,
       },
     };
@@ -334,6 +354,8 @@ export const setPassword = mutation({
     const user = await ctx.db.get(session.userId);
     if (!user) throw new Error("User not found.");
     if (user.passwordHash) throw new Error("Password already set. Use changePassword instead.");
+    if (!user.emailVerified) throw new Error("Email must be verified to set a password.");
+    if (!user.phoneVerified) throw new Error("Phone number must be verified to set a password.");
 
     const hash = await hashPassword(args.password);
     await ctx.db.patch(user._id, { passwordHash: hash });
@@ -358,6 +380,8 @@ export const changePassword = mutation({
     const user = await ctx.db.get(session.userId);
     if (!user) throw new Error("User not found.");
     if (!user.passwordHash) throw new Error("No password set. Use setPassword instead.");
+    if (!user.emailVerified) throw new Error("Email must be verified to change password.");
+    if (!user.phoneVerified) throw new Error("Phone number must be verified to change password.");
 
     const valid = await verifyPassword(args.currentPassword, user.passwordHash);
     if (!valid) throw new Error("Current password is incorrect.");

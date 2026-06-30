@@ -24,6 +24,8 @@ export default defineSchema({
     walletBalance: v.number(),
     passwordHash: v.optional(v.string()),
     emailVerified: v.optional(v.boolean()),
+    phone: v.optional(v.string()),
+    phoneVerified: v.optional(v.boolean()),
     firebaseUid: v.optional(v.string()),
     verificationToken: v.optional(v.string()),
     verificationTokenExpires: v.optional(v.number()),
@@ -62,6 +64,7 @@ export default defineSchema({
     reference: v.string(),
     status: v.string(),
     description: v.optional(v.string()),
+    provider: v.optional(v.string()),
     metadata: v.optional(v.any()),
     createdAt: v.number(),
   }).index("by_user_id", ["userId"])

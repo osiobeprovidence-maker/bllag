@@ -16,6 +16,7 @@ export function AuthVerify() {
 
   const token = searchParams.get('token');
   const emailParam = searchParams.get('email');
+  const redirectParam = searchParams.get('redirect');
 
   useEffect(() => {
     if (!token || !emailParam) {
@@ -30,13 +31,14 @@ export function AuthVerify() {
         setUser(result.user as any);
         setStatus('success');
         setMessage('Signed in successfully!');
-        setTimeout(() => navigate('/', { replace: true }), 1500);
+        const target = redirectParam ? `/${redirectParam}` : '/';
+        setTimeout(() => navigate(target, { replace: true }), 1500);
       })
       .catch((err) => {
         setStatus('error');
         setMessage(err.message || 'Verification failed');
       });
-  }, [token, emailParam, verifyMagicLink, navigate, setUser, setSessionId]);
+  }, [token, emailParam, redirectParam, verifyMagicLink, navigate, setUser, setSessionId]);
 
   return (
     <div className="pt-32 pb-24 min-h-screen flex items-center justify-center bg-background px-4">

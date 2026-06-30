@@ -10,6 +10,7 @@ export const initializePayment = action({
     sessionId: v.string(),
     email: v.string(),
     amount: v.number(),
+    callbackUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     if (!PAYSTACK_SECRET_KEY) {
@@ -31,7 +32,7 @@ export const initializePayment = action({
         email: args.email,
         amount: Math.round(args.amount * 100),
         reference,
-        callback_url: "https://www.bllag.xyz/wallet",
+        callback_url: args.callbackUrl || "https://www.bllag.xyz/wallet/payment-success",
       }),
     });
 
@@ -102,6 +103,7 @@ export const verifyPayment = action({
       reference: args.reference,
       status: "completed",
       description: `Wallet top-up via Paystack`,
+      provider: "paystack",
       metadata,
     });
 
@@ -136,6 +138,7 @@ export const createTransaction = mutation({
     reference: v.string(),
     status: v.string(),
     description: v.optional(v.string()),
+    provider: v.optional(v.string()),
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
@@ -152,6 +155,7 @@ export const createTransaction = mutation({
       reference: args.reference,
       status: args.status,
       description: args.description,
+      provider: args.provider,
       metadata: args.metadata,
       createdAt: Date.now(),
     });

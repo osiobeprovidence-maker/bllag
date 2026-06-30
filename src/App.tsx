@@ -22,6 +22,9 @@ import { AuthVerify } from './pages/AuthVerify';
 import { Affiliate } from './pages/Affiliate';
 import { Profile } from './pages/Profile';
 import { Wallet } from './pages/Wallet';
+import { WalletTopUp } from './pages/WalletTopUp';
+import { WalletPaymentSuccess } from './pages/WalletPaymentSuccess';
+import { WalletPaymentFailed } from './pages/WalletPaymentFailed';
 import { Membership } from './pages/Membership';
 import { Orders } from './pages/Orders';
 import { Notifications } from './pages/Notifications';
@@ -114,6 +117,9 @@ export default function App() {
                   <Route path="/affiliate" element={<Affiliate />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/wallet" element={<Wallet />} />
+                  <Route path="/wallet/top-up" element={<WalletTopUp />} />
+                  <Route path="/wallet/payment-success" element={<WalletPaymentSuccess />} />
+                  <Route path="/wallet/payment-failed" element={<WalletPaymentFailed />} />
                   <Route path="/membership" element={<Membership />} />
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/order/:id" element={<OrderDetails />} />
