@@ -39,6 +39,7 @@ interface AuthState {
     role: UserRole;
     profileImage?: string;
     walletBalance: number;
+    emailVerified?: boolean;
     transactions: Transaction[];
     installments: InstallmentPlan[];
     membership: Membership;

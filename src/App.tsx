@@ -39,6 +39,7 @@ import { SearchResults } from './pages/SearchResults';
 import { CategoryListing } from './pages/CategoryListing';
 import { OrderDetails } from './pages/OrderDetails';
 import { OrderTracking } from './pages/OrderTracking';
+import { VerifyEmail } from './pages/VerifyEmail';
 import { PaymentSuccess } from './pages/PaymentSuccess';
 import { PaymentFailed } from './pages/PaymentFailed';
 import { AddressBook } from './pages/AddressBook';
@@ -85,6 +86,7 @@ export default function App() {
           name: firebaseUser.displayName || 'User',
           email: firebaseUser.email || '',
           role: role as any,
+          emailVerified: firebaseUser.emailVerified ?? false,
           walletBalance: 50000,
           transactions: [],
           installments: [],
@@ -101,6 +103,7 @@ export default function App() {
               profileImage: data.profileImage,
               address: data.address,
               walletBalance: data.walletBalance ?? 50000,
+              emailVerified: data.emailVerified ?? false,
               transactions: data.transactions ?? [],
               installments: data.installments ?? [],
               membership: data.membership ?? { level: 'none', status: 'inactive' }
@@ -118,6 +121,7 @@ export default function App() {
               name: firebaseUser.displayName || 'User',
               email: firebaseUser.email || '',
               walletBalance: 50000,
+              emailVerified: false,
               createdAt: new Date().toISOString()
             }).catch((err) => {
               console.error("Error creating Firestore user doc:", err);
@@ -171,6 +175,7 @@ export default function App() {
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<SignUp />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/affiliate" element={<Affiliate />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/wallet" element={<Wallet />} />

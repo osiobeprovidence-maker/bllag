@@ -1,58 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from 'firebase/auth';
-import { useAction } from 'convex/react';
-import { api } from '../../convex/_generated/api';
+import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, authPersistenceReady, getAuthErrorMessage } from '../lib/firebase';
 import { useAuthStore } from '../store';
 
 export function Login() {
-  const [method, setMethod] = useState<'selection' | 'email' | 'magic-link'>('selection');
+  const [method, setMethod] = useState<'selection' | 'email'>('selection');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [emailSent, setEmailSent] = useState(false);
   const setUser = useAuthStore((state) => state.setUser);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const navigate = useNavigate();
-  const sendWelcomeEmail = useAction(api.emails.sendWelcomeEmail);
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/', { replace: true });
-      return;
     }
-
-    if (isSignInWithEmailLink(auth, window.location.href)) {
-      const savedEmail = window.localStorage.getItem('emailForSignIn');
-      if (savedEmail) {
-        signInWithEmailLink(auth, savedEmail, window.location.href)
-          .then(async (result) => {
-            const role = result.user.email === 'riderezzy@gmail.com' ? 'admin' : 'customer';
-            setUser({
-              name: result.user.displayName || result.user.email?.split('@')[0] || 'User',
-              email: result.user.email || '',
-              role,
-              walletBalance: 50000,
-              transactions: [],
-              installments: [],
-              membership: { level: 'none', status: 'inactive' },
-            });
-            window.localStorage.removeItem('emailForSignIn');
-            sendWelcomeEmail({ email: result.user.email || '', name: result.user.displayName || 'User' });
-            navigate('/', { replace: true });
-          })
-          .catch((err) => {
-            console.error('[Auth] Email link sign-in failed:', err);
-            setError(getAuthErrorMessage(err, 'Failed to complete sign-in. Try again.'));
-          });
-      } else {
-        setError('Email not found. Please request a new magic link.');
-        setMethod('magic-link');
-      }
-    }
-  }, [navigate, setUser, isAuthenticated, sendWelcomeEmail]);
+  }, [navigate, isAuthenticated]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,49 +67,6 @@ export function Login() {
     }
   };
 
-  const handleSendMagicLink = async () => {
-    setError(null);
-    if (!email) {
-      setError('Enter your email address.');
-      return;
-    }
-    try {
-      await authPersistenceReady;
-      const actionCodeSettings = {
-        url: window.location.origin + '/login',
-        handleCodeInApp: true,
-      };
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      window.localStorage.setItem('emailForSignIn', email);
-      setEmailSent(true);
-    } catch (err: unknown) {
-      console.error('[Auth] sendSignInLinkToEmail failed:', err);
-      setError(getAuthErrorMessage(err, 'Failed to send magic link. Please try again.'));
-    }
-  };
-
-  if (emailSent) {
-    return (
-      <div className="pt-32 pb-24 min-h-screen flex items-center justify-center bg-background px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full bg-muted p-8 border border-gray-200 text-center"
-        >
-          <h1 className="text-3xl font-black uppercase tracking-tight mb-4">Check Your Email</h1>
-          <p className="text-muted-foreground mb-4">We sent a sign-in link to <strong className="text-primary">{email}</strong></p>
-          <p className="text-xs text-muted-foreground">Click the link in the email to sign in. It expires in 1 hour.</p>
-          <button
-            onClick={() => setEmailSent(false)}
-            className="mt-8 text-xs font-bold uppercase tracking-widest text-accent hover:underline"
-          >
-            Send again
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
     <div className="pt-32 pb-24 min-h-screen flex items-center justify-center bg-background px-4">
       <motion.div 
@@ -155,7 +78,7 @@ export function Login() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black uppercase tracking-tight mb-2">Welcome Back</h1>
           <p className="text-muted-foreground text-sm">
-            {method === 'selection' ? 'Choose your preferred login method.' : method === 'magic-link' ? 'Enter your email to receive a sign-in link.' : 'Enter your email details to access your account.'}
+            {method === 'selection' ? 'Choose your preferred login method.' : 'Enter your email details to access your account.'}
           </p>
         </div>
 
@@ -180,48 +103,11 @@ export function Login() {
               Continue with Google
             </button>
             <button
-              onClick={() => { setMethod('magic-link'); setError(null); }}
-              className="w-full bg-background border border-gray-300 py-4 text-sm font-bold uppercase tracking-widest hover:border-accent transition-colors"
-            >
-              Send Magic Link
-            </button>
-            <button
               onClick={() => setMethod('email')}
               className="w-full bg-primary text-primary-foreground py-4 text-sm font-bold uppercase tracking-widest hover:bg-accent transition-colors"
             >
               Sign in with Email
             </button>
-          </div>
-        ) : method === 'magic-link' ? (
-          <div className="space-y-6">
-            <button
-              type="button"
-              onClick={() => setMethod('selection')}
-              className="text-xs font-bold uppercase tracking-widest text-accent hover:underline mb-4"
-            >
-              ← Back to methods
-            </button>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest mb-2" htmlFor="magic-email">
-                Email
-              </label>
-              <input
-                id="magic-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full bg-background border border-gray-300 p-3 focus:outline-none focus:border-accent transition-colors"
-                placeholder="you@example.com"
-              />
-            </div>
-            <button
-              onClick={handleSendMagicLink}
-              className="w-full bg-primary text-primary-foreground py-4 text-sm font-bold uppercase tracking-widest hover:bg-accent transition-colors"
-            >
-              Send Magic Link
-            </button>
-            <p className="text-[10px] text-muted-foreground text-center">No password needed. We'll email you a sign-in link.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -246,6 +132,7 @@ export function Login() {
                 placeholder="you@example.com"
               />
             </div>
+
             <div>
               <div className="flex justify-between mb-2">
                 <label className="block text-xs font-bold uppercase tracking-widest" htmlFor="password">
@@ -263,6 +150,7 @@ export function Login() {
                 placeholder="••••••••"
               />
             </div>
+
             <button
               type="submit"
               className="w-full bg-primary text-primary-foreground py-4 text-sm font-bold uppercase tracking-widest hover:bg-accent transition-colors"

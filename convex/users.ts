@@ -60,7 +60,55 @@ export const upsert = mutation({
     return await ctx.db.insert("users", {
       ...args,
       walletBalance: args.walletBalance ?? 50000,
+      emailVerified: false,
     });
+  },
+});
+
+export const setVerificationToken = mutation({
+  args: {
+    firebaseUid: v.string(),
+    token: v.string(),
+    expiresAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_firebase_uid", (q) => q.eq("firebaseUid", args.firebaseUid))
+      .first();
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        verificationToken: args.token,
+        verificationTokenExpires: args.expiresAt,
+      });
+    }
+  },
+});
+
+export const verifyEmail = mutation({
+  args: {
+    token: v.string(),
+    email: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+    if (!user) throw new Error("User not found");
+    if (user.emailVerified) return { verified: true };
+    if (!user.verificationToken || user.verificationToken !== args.token) {
+      throw new Error("Invalid verification token");
+    }
+    if (user.verificationTokenExpires && user.verificationTokenExpires < Date.now()) {
+      throw new Error("Verification token has expired. Request a new one.");
+    }
+    await ctx.db.patch(user._id, {
+      emailVerified: true,
+      verificationToken: undefined,
+      verificationTokenExpires: undefined,
+    });
+    return { verified: true };
   },
 });
 
