@@ -31,6 +31,7 @@ export function SignUp() {
       }
     }).catch((err) => {
       console.error("Redirect sign-in error:", err);
+      setError(err.message || 'Google sign-up failed. Please try again.');
     });
   }, [navigate, setUser]);
 

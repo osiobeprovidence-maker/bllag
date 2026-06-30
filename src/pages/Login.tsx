@@ -30,6 +30,7 @@ export function Login() {
       }
     }).catch((err) => {
       console.error("Redirect sign-in error:", err);
+      setError(err.message || 'Google sign-in failed. Please try again.');
     });
   }, [navigate, setUser]);
 

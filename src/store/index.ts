@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { signOut } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 
@@ -77,7 +78,10 @@ export const useAuthStore = create<AuthState>()(
           membership: { level: 'none', status: 'inactive' }
         } 
       }),
-      logout: () => set({ isAuthenticated: false, user: null }),
+      logout: () => {
+        signOut(auth).catch((err) => console.error('Sign out error:', err));
+        set({ isAuthenticated: false, user: null });
+      },
       setUser: (user) => set({ 
         isAuthenticated: !!user, 
         user: user ? {

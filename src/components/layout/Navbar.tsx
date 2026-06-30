@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, User, Search, Menu, X } from 'lucide-react';
-import { signOut } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
 import { useShopStore, useAuthStore } from '../../store';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
@@ -129,7 +127,7 @@ export function Navbar() {
                 <User className="h-5 w-5" />
               </Link>
               {isAuthenticated && (
-                <button onClick={() => signOut(auth)} className="hidden sm:block text-xs uppercase tracking-widest font-bold hover:text-accent transition-colors">
+                <button onClick={() => logout()} className="hidden sm:block text-xs uppercase tracking-widest font-bold hover:text-accent transition-colors">
                   Logout
                 </button>
               )}
@@ -226,7 +224,7 @@ export function Navbar() {
                       <User className="h-5 w-5" />
                       <span className="text-sm tracking-widest uppercase">Account</span>
                     </Link>
-                    <button onClick={() => { signOut(auth); setIsMobileMenuOpen(false); }} className="text-sm tracking-widest uppercase text-accent font-bold">
+                    <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="text-sm tracking-widest uppercase text-accent font-bold">
                       Logout
                     </button>
                   </div>

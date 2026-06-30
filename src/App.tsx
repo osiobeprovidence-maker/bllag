@@ -71,7 +71,6 @@ function ScrollToTop() {
 
 export default function App() {
   const setUser = useAuthStore((state) => state.setUser);
-  const user = useAuthStore((state) => state.user);
   const upsertUser = useMutation(api.users.upsert);
 
   useEffect(() => {
@@ -80,19 +79,17 @@ export default function App() {
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const role = firebaseUser.email === 'riderezzy@gmail.com' ? 'admin' : 'customer';
-        
-        // Initial set to ensure state exists
+
         setUser({
           name: firebaseUser.displayName || 'User',
           email: firebaseUser.email || '',
           role: role as any,
-          walletBalance: user?.walletBalance ?? 50000,
-          transactions: user?.transactions ?? [],
-          installments: user?.installments ?? [],
-          membership: user?.membership ?? { level: 'none', status: 'inactive' }
+          walletBalance: 50000,
+          transactions: [],
+          installments: [],
+          membership: { level: 'none', status: 'inactive' }
         });
 
-        // Listen for Firestore updates
         unsubDoc = onSnapshot(doc(db, 'users', firebaseUser.uid), (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
@@ -116,12 +113,13 @@ export default function App() {
               walletBalance: data.walletBalance ?? 50000,
             });
           } else {
-            // Initialize user doc if it doesn't exist
             setDoc(doc(db, 'users', firebaseUser.uid), {
               name: firebaseUser.displayName || 'User',
               email: firebaseUser.email || '',
               walletBalance: 50000,
               createdAt: new Date().toISOString()
+            }).catch((err) => {
+              console.error("Error creating Firestore user doc:", err);
             });
 
             upsertUser({
