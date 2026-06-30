@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -25,6 +25,10 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firestoreDatabaseId);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
+
+setPersistence(auth, browserLocalPersistence).catch((err) => {
+  console.error('Failed to set auth persistence:', err);
+});
 
 export enum OperationType {
   CREATE = 'create',

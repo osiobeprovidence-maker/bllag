@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { GoogleAuthProvider, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword } from 'firebase/auth';
@@ -10,10 +10,18 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const setUser = useAuthStore((s) => s.setUser);
+  const { setUser, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+  const handledRedirect = useRef(false);
 
   useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+      return;
+    }
+    if (handledRedirect.current) return;
+    handledRedirect.current = true;
+
     getRedirectResult(auth).then((result) => {
       if (result?.user) {
         const role = result.user.email === 'riderezzy@gmail.com' ? 'admin' : 'customer';
@@ -32,7 +40,7 @@ export function Login() {
       console.error("Redirect sign-in error:", err);
       setError(err.message || 'Google sign-in failed. Please try again.');
     });
-  }, [navigate, setUser]);
+  }, [navigate, setUser, isAuthenticated]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,9 +68,12 @@ export function Login() {
     setError(null);
     try {
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      console.log('[Auth] Starting Google redirect sign-in...');
       await signInWithRedirect(auth, provider);
     } catch (err: any) {
-      setError(err.message || 'Failed to login with Google');
+      console.error('[Auth] signInWithRedirect failed:', err);
+      setError(err.message || 'Failed to login with Google. Check that Google Auth is enabled in Firebase Console.');
     }
   };
 

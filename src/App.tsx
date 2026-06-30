@@ -77,6 +77,7 @@ export default function App() {
     let unsubDoc: (() => void) | undefined;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('[Auth] onAuthStateChanged fired:', firebaseUser?.email ?? 'null');
       if (firebaseUser) {
         const role = firebaseUser.email === 'riderezzy@gmail.com' ? 'admin' : 'customer';
 
