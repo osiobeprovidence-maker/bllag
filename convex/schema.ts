@@ -22,6 +22,10 @@ export default defineSchema({
     role: v.string(),
     profileImage: v.optional(v.string()),
     walletBalance: v.number(),
+    emailVerified: v.optional(v.boolean()),
+    firebaseUid: v.optional(v.string()),
+    verificationToken: v.optional(v.string()),
+    verificationTokenExpires: v.optional(v.number()),
     address: v.optional(
       v.object({
         street: v.string(),
