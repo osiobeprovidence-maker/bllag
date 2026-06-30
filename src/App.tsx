@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { HelmetProvider, Helmet } from 'react-helmet-async';
-import { useMutation, useQuery } from 'convex/react';
+import { useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
-import { useUser } from '@clerk/react';
 import { useAuthStore } from './store';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
@@ -19,21 +18,17 @@ import { Checkout } from './pages/Checkout';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { Collections } from './pages/Collections';
 import { Login } from './pages/Login';
-import { SignUp } from './pages/SignUp';
-import { SsoCallback } from './pages/SsoCallback';
+import { AuthVerify } from './pages/AuthVerify';
 import { Affiliate } from './pages/Affiliate';
 import { Profile } from './pages/Profile';
 import { Wallet } from './pages/Wallet';
 import { Membership } from './pages/Membership';
 import { Orders } from './pages/Orders';
 import { Notifications } from './pages/Notifications';
-import { ForgotPassword } from './pages/ForgotPassword';
-import { ResetPassword } from './pages/ResetPassword';
 import { SearchResults } from './pages/SearchResults';
 import { CategoryListing } from './pages/CategoryListing';
 import { OrderDetails } from './pages/OrderDetails';
 import { OrderTracking } from './pages/OrderTracking';
-import { VerifyEmail } from './pages/VerifyEmail';
 import { PaymentSuccess } from './pages/PaymentSuccess';
 import { PaymentFailed } from './pages/PaymentFailed';
 import { AddressBook } from './pages/AddressBook';
@@ -65,35 +60,26 @@ function ScrollToTop() {
 }
 
 function AuthSync({ children }: { children: React.ReactNode }) {
-  const { isSignedIn, user, isLoaded } = useUser();
-  const setUser = useAuthStore((state) => state.setUser);
-  const upsertUser = useMutation(api.users.upsert);
-  const convexUser = useQuery(api.users.getMe);
+  const sessionId = useAuthStore((s) => s.sessionId);
+  const setSessionId = useAuthStore((s) => s.setSessionId);
+  const setUser = useAuthStore((s) => s.setUser);
+  const convexUser = useQuery(api.auth.getSession, sessionId ? { sessionId } : 'skip');
 
   useEffect(() => {
-    if (!isLoaded) return;
-
-    if (isSignedIn && user) {
-      const email = user.primaryEmailAddress?.emailAddress || '';
-      const role = email === 'riderezzy@gmail.com' ? 'admin' : 'customer';
-      const name = user.fullName || email.split('@')[0] || 'User';
-
-      setUser({
-        name,
-        email,
-        role,
-        emailVerified: convexUser?.emailVerified ?? false,
-        walletBalance: convexUser?.walletBalance ?? 50000,
-        transactions: [],
-        installments: [],
-        membership: { level: 'none', status: 'inactive' },
-      });
-
-      upsertUser({ name, email, role, walletBalance: 50000 });
-    } else if (isLoaded && !isSignedIn) {
-      setUser(null);
+    const stored = localStorage.getItem('bllag-session');
+    if (stored && !sessionId) {
+      setSessionId(stored);
     }
-  }, [isLoaded, isSignedIn, user, convexUser, setUser, upsertUser]);
+  }, [sessionId, setSessionId]);
+
+  useEffect(() => {
+    if (convexUser === null) {
+      setUser(null);
+      setSessionId(null);
+    } else if (convexUser) {
+      setUser(convexUser as any);
+    }
+  }, [convexUser, setUser, setSessionId]);
 
   return <>{children}</>;
 }
@@ -124,9 +110,7 @@ export default function App() {
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/admin" element={<AdminDashboard />} />
                   <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<SignUp />} />
-                  <Route path="/sso-callback" element={<SsoCallback />} />
-                  <Route path="/verify-email" element={<VerifyEmail />} />
+                  <Route path="/auth/verify" element={<AuthVerify />} />
                   <Route path="/affiliate" element={<Affiliate />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/wallet" element={<Wallet />} />
@@ -135,8 +119,6 @@ export default function App() {
                   <Route path="/order/:id" element={<OrderDetails />} />
                   <Route path="/order-tracking" element={<OrderTracking />} />
                   <Route path="/notifications" element={<Notifications />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/search" element={<SearchResults />} />
                   <Route path="/category/:category" element={<CategoryListing />} />
                   <Route path="/payment-success" element={<PaymentSuccess />} />

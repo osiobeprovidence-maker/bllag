@@ -22,11 +22,6 @@ export default defineSchema({
     role: v.string(),
     profileImage: v.optional(v.string()),
     walletBalance: v.number(),
-    emailVerified: v.boolean(),
-    verificationToken: v.optional(v.string()),
-    verificationTokenExpires: v.optional(v.number()),
-    clerkId: v.optional(v.string()),
-    firebaseUid: v.optional(v.string()),
     address: v.optional(
       v.object({
         street: v.string(),
@@ -36,9 +31,24 @@ export default defineSchema({
         country: v.string(),
       })
     ),
-  }).index("by_clerk_id", ["clerkId"])
-    .index("by_firebase_uid", ["firebaseUid"])
+  }).index("by_email", ["email"]),
+
+  authTokens: defineTable({
+    tokenHash: v.string(),
+    email: v.string(),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_token_hash", ["tokenHash"])
     .index("by_email", ["email"]),
+
+  sessions: defineTable({
+    sessionId: v.string(),
+    userId: v.id("users"),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  }).index("by_session_id", ["sessionId"])
+    .index("by_user_id", ["userId"]),
 
   orders: defineTable({
     userId: v.string(),

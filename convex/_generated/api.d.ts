@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as auth from "../auth.js";
 import type * as collections from "../collections.js";
 import type * as emails from "../emails.js";
 import type * as notifications from "../notifications.js";
@@ -24,6 +25,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auth: typeof auth;
   collections: typeof collections;
   emails: typeof emails;
   notifications: typeof notifications;

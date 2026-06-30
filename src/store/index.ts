@@ -27,58 +27,73 @@ interface Membership {
   nextBillingDate?: string;
 }
 
+interface UserData {
+  _id?: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  profileImage?: string;
+  walletBalance: number;
+  transactions: Transaction[];
+  installments: InstallmentPlan[];
+  membership: Membership;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+}
+
 interface AuthState {
   isAuthenticated: boolean;
-  user: { 
-    name: string; 
-    email: string; 
-    role: UserRole;
-    profileImage?: string;
-    walletBalance: number;
-    emailVerified?: boolean;
-    transactions: Transaction[];
-    installments: InstallmentPlan[];
-    membership: Membership;
-    address?: {
-      street: string;
-      city: string;
-      state: string;
-      zipCode: string;
-      country: string;
-    };
-  } | null;
-  login: (name: string, email: string, role: UserRole) => void;
+  user: UserData | null;
+  sessionId: string | null;
+  login: (name: string, email: string, role: UserRole, sessionId: string) => void;
   logout: () => void;
-  setUser: (user: AuthState['user']) => void;
+  setUser: (user: UserData | null) => void;
+  setSessionId: (sessionId: string | null) => void;
   updateProfileImage: (imageUrl: string) => void;
   updateBalance: (amount: number, type: Transaction['type'], description: string, installmentData?: { productName: string, totalAmount: number, installmentsCount?: number, frequency?: 'weekly' | 'monthly', startDate?: string }) => void;
   updateMembership: (level: Membership['level']) => void;
-  updateAddress: (address: NonNullable<AuthState['user']>['address']) => void;
+  updateAddress: (address: NonNullable<UserData['address']>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
     (set) => ({
       isAuthenticated: false,
       user: null,
-      login: (name, email, role) => set({ 
-        isAuthenticated: true, 
-        user: { 
-          name, 
-          email, 
-          role, 
+      sessionId: null,
+      login: (name, email, role, sessionId) => set({
+        isAuthenticated: true,
+        sessionId,
+        user: {
+          name,
+          email,
+          role,
           walletBalance: 50000,
           transactions: [
             { id: '1', type: 'deposit', amount: 50000, date: new Date().toISOString(), description: 'Welcome Bonus' }
           ],
           installments: [],
           membership: { level: 'none', status: 'inactive' }
-        } 
+        }
       }),
       logout: () => {
-        set({ isAuthenticated: false, user: null });
+        localStorage.removeItem('bllag-session');
+        set({ isAuthenticated: false, user: null, sessionId: null });
       },
-      setUser: (user) => set({ 
-        isAuthenticated: !!user, 
+      setSessionId: (sessionId) => {
+        if (sessionId) {
+          localStorage.setItem('bllag-session', sessionId);
+        } else {
+          localStorage.removeItem('bllag-session');
+        }
+        set({ sessionId });
+      },
+      setUser: (user) => set({
+        isAuthenticated: !!user,
         user: user ? {
           ...user,
           profileImage: user.profileImage,
@@ -86,7 +101,7 @@ export const useAuthStore = create<AuthState>()(
           transactions: user.transactions ?? [{ id: '1', type: 'deposit', amount: 50000, date: new Date().toISOString(), description: 'Welcome Bonus' }],
           installments: user.installments ?? [],
           membership: user.membership ?? { level: 'none', status: 'inactive' }
-        } : null 
+        } : null
       }),
       updateProfileImage: (imageUrl) => set((state) => {
         if (!state.user) return state;
@@ -114,7 +129,6 @@ export const useAuthStore = create<AuthState>()(
       }),
       updateAddress: (address) => set((state) => {
         if (!state.user) return state;
-
         return {
           user: {
             ...state.user,
@@ -124,7 +138,7 @@ export const useAuthStore = create<AuthState>()(
       }),
       updateBalance: (amount, type, description, installmentData) => set((state) => {
         if (!state.user) return state;
-        
+
         const newTransaction: Transaction = {
           id: Math.random().toString(36).substring(7),
           type,
@@ -140,7 +154,7 @@ export const useAuthStore = create<AuthState>()(
           const frequency = installmentData.frequency || 'weekly';
           const installmentsCount = installmentData.installmentsCount || 4;
           const startDate = installmentData.startDate ? new Date(installmentData.startDate) : new Date();
-          
+
           const nextDate = new Date(startDate);
           if (frequency === 'weekly') {
             nextDate.setDate(nextDate.getDate() + 7);
@@ -222,7 +236,7 @@ export interface Order {
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   paymentStatus: 'unpaid' | 'paid' | 'refunded';
   trackingNumber?: string;
-  shippingAddress: NonNullable<AuthState['user']>['address'];
+  shippingAddress: NonNullable<UserData['address']>;
   createdAt: string;
   updatedAt: string;
 }
@@ -265,16 +279,16 @@ export const useShopStore = create<ShopState>()(
       wishlist: [],
       addToCart: (product, quantity = 1, options = {}) =>
         set((state) => {
-          const existing = state.cart.find((item) => 
-            item.id === product.id && 
-            item.isPaySmallSmall === options.isPaySmallSmall && 
+          const existing = state.cart.find((item) =>
+            item.id === product.id &&
+            item.isPaySmallSmall === options.isPaySmallSmall &&
             item.isGift === options.isGift
           );
           if (existing) {
             return {
               cart: state.cart.map((item) =>
-                (item.id === product.id && 
-                 item.isPaySmallSmall === options.isPaySmallSmall && 
+                (item.id === product.id &&
+                 item.isPaySmallSmall === options.isPaySmallSmall &&
                  item.isGift === options.isGift)
                   ? { ...item, quantity: item.quantity + quantity }
                   : item
@@ -285,19 +299,19 @@ export const useShopStore = create<ShopState>()(
         }),
       removeFromCart: (productId, options = {}) =>
         set((state) => ({
-          cart: state.cart.filter((item) => 
-            !(item.id === productId && 
-              item.isPaySmallSmall === options.isPaySmallSmall && 
+          cart: state.cart.filter((item) =>
+            !(item.id === productId &&
+              item.isPaySmallSmall === options.isPaySmallSmall &&
               item.isGift === options.isGift)
           ),
         })),
       updateQuantity: (productId, quantity, options = {}) =>
         set((state) => ({
           cart: state.cart.map((item) =>
-            (item.id === productId && 
-             item.isPaySmallSmall === options.isPaySmallSmall && 
-             item.isGift === options.isGift) 
-              ? { ...item, quantity: Math.max(1, quantity) } 
+            (item.id === productId &&
+             item.isPaySmallSmall === options.isPaySmallSmall &&
+             item.isGift === options.isGift)
+              ? { ...item, quantity: Math.max(1, quantity) }
               : item
           ),
         })),

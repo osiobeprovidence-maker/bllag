@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, User, Search, Menu, X } from 'lucide-react';
 import { useShopStore, useAuthStore } from '../../store';
+import { useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
 
@@ -11,7 +13,8 @@ export function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { cartCount, wishlist } = useShopStore();
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user, sessionId, logout } = useAuthStore();
+  const logoutMutation = useMutation(api.auth.logout);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -30,6 +33,13 @@ export function Navbar() {
       setIsSearchOpen(false);
       setSearchQuery('');
     }
+  };
+
+  const handleLogout = async () => {
+    if (sessionId) {
+      await logoutMutation({ sessionId });
+    }
+    logout();
   };
 
   const navLinks = [
@@ -127,7 +137,7 @@ export function Navbar() {
                 <User className="h-5 w-5" />
               </Link>
               {isAuthenticated && (
-                <button onClick={() => logout()} className="hidden sm:block text-xs uppercase tracking-widest font-bold hover:text-accent transition-colors">
+                <button onClick={handleLogout} className="hidden sm:block text-xs uppercase tracking-widest font-bold hover:text-accent transition-colors">
                   Logout
                 </button>
               )}
@@ -224,7 +234,7 @@ export function Navbar() {
                       <User className="h-5 w-5" />
                       <span className="text-sm tracking-widest uppercase">Account</span>
                     </Link>
-                    <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="text-sm tracking-widest uppercase text-accent font-bold">
+                    <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="text-sm tracking-widest uppercase text-accent font-bold">
                       Logout
                     </button>
                   </div>

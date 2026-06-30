@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { User, Package, Settings, LogOut, Shield, Briefcase, MapPin, Phone, Mail, Wallet, Gift, CreditCard, ArrowUpRight, ArrowDownLeft, Crown, Check, Zap, Camera, Loader2 } from 'lucide-react';
+import { User, Package, Settings, LogOut, Shield, Briefcase, MapPin, Phone, Mail, Wallet, Gift, ArrowUpRight, ArrowDownLeft, Crown, Check, Camera, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../store';
 import { useNavigate, Link } from 'react-router-dom';
-import { useClerk } from '@clerk/react';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 
 export function Profile() {
-  const { user, logout, updateBalance, updateAddress, updateProfileImage } = useAuthStore();
-  const { signOut } = useClerk();
+  const { user, sessionId, logout, updateBalance, updateAddress, updateProfileImage } = useAuthStore();
+  const logoutMutation = useMutation(api.auth.logout);
   const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'settings' | 'wallet' | 'about' | 'contact' | 'agent' | 'membership' | 'address'>('info');
@@ -40,8 +41,10 @@ export function Profile() {
     setActiveTab('info');
   };
 
-  const handleLogout = () => {
-    signOut();
+  const handleLogout = async () => {
+    if (sessionId) {
+      await logoutMutation({ sessionId });
+    }
     logout();
     navigate('/');
   };
@@ -105,11 +108,6 @@ export function Profile() {
               <p className="text-muted-foreground text-sm">{user.email}</p>
               <div className="flex items-center gap-3 mt-2">
                 <span className="text-xs font-bold uppercase tracking-widest bg-primary/10 text-primary px-3 py-1">{user.role}</span>
-                {user.emailVerified && (
-                  <span className="text-xs font-bold uppercase tracking-widest bg-green-100 text-green-700 px-3 py-1 flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Verified
-                  </span>
-                )}
               </div>
             </div>
             <div className="text-right">
@@ -168,7 +166,6 @@ export function Profile() {
                     { label: 'Full Name', value: user.name },
                     { label: 'Email Address', value: user.email },
                     { label: 'Role', value: user.role },
-                    { label: 'Email Verified', value: user.emailVerified ? 'Yes' : 'No' },
                     { label: 'Wallet Balance', value: `₦${user.walletBalance?.toLocaleString() || '0'}` },
                   ].map((field, i) => (
                     <div key={i}>
