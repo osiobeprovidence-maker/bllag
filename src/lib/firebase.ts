@@ -26,9 +26,40 @@ export const db = getFirestore(app, firestoreDatabaseId);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 
-setPersistence(auth, browserLocalPersistence).catch((err) => {
+export const authPersistenceReady = setPersistence(auth, browserLocalPersistence).catch((err) => {
   console.error('Failed to set auth persistence:', err);
 });
+
+export function getAuthErrorMessage(error: unknown, fallback: string) {
+  const code = typeof error === 'object' && error !== null && 'code' in error
+    ? String(error.code)
+    : '';
+
+  switch (code) {
+    case 'auth/invalid-credential':
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+      return 'Incorrect email or password.';
+    case 'auth/email-already-in-use':
+      return 'An account already exists for this email.';
+    case 'auth/weak-password':
+      return 'Use a stronger password with at least 6 characters.';
+    case 'auth/unauthorized-domain':
+      return 'This website domain is not authorized for Firebase sign-in.';
+    case 'auth/operation-not-allowed':
+      return 'This sign-in method is not enabled in Firebase.';
+    case 'auth/popup-blocked':
+      return 'Your browser blocked the Google sign-in window. Allow popups and try again.';
+    case 'auth/popup-closed-by-user':
+      return 'Google sign-in was cancelled.';
+    case 'auth/network-request-failed':
+      return 'Could not reach Firebase Authentication. Check your connection and try again.';
+    case 'auth/too-many-requests':
+      return 'Too many sign-in attempts. Please wait a moment and try again.';
+    default:
+      return fallback;
+  }
+}
 
 export enum OperationType {
   CREATE = 'create',

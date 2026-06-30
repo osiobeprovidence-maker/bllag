@@ -60,7 +60,6 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
     (set) => ({
       isAuthenticated: false,
       user: null,
@@ -200,11 +199,7 @@ export const useAuthStore = create<AuthState>()(
           }
         };
       }),
-    }),
-    {
-      name: 'blag-auth-storage',
-    }
-  )
+    })
 );
 
 export interface Product {

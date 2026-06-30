@@ -4,6 +4,49 @@ import { api } from "./_generated/api";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
+export const sendWelcomeEmail = action({
+  args: {
+    email: v.string(),
+    name: v.string(),
+  },
+  handler: async (_, args) => {
+    if (!RESEND_API_KEY) {
+      console.warn("RESEND_API_KEY not set — skipping welcome email");
+      return { sent: false };
+    }
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "bllag <noreply@bllag.ng>",
+        to: args.email,
+        subject: "Welcome to bllag",
+        html: `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+            <h1 style="font-size:24px;font-weight:900;text-transform:uppercase;letter-spacing:-1px">Welcome to bllag, ${args.name}.</h1>
+            <p style="color:#666">You're now part of the bllag universe — where every piece tells a story.</p>
+            <p style="color:#666">Browse our latest collections and discover jewelry crafted with precision and elegance.</p>
+            <a href="https://bllag.vercel.app/shop" style="display:inline-block;background:#000;color:#fff;padding:12px 32px;text-decoration:none;text-transform:uppercase;font-size:12px;letter-spacing:2px;margin-top:16px">Explore the Collection</a>
+            <p style="color:#999;font-size:12px;margin-top:32px">bllag — Luxury Jewelry & High-End Collections</p>
+          </div>
+        `,
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.error("Resend error:", body);
+      return { sent: false };
+    }
+
+    return { sent: true };
+  },
+});
+
 export const sendOrderConfirmation = action({
   args: {
     email: v.string(),
@@ -38,7 +81,7 @@ export const sendOrderConfirmation = action({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "BLAG <orders@blag.ng>",
+        from: "bllag <orders@bllag.ng>",
         to: args.email,
         subject: `Order Confirmed — #${args.orderId}`,
         html: `
