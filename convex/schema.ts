@@ -22,6 +22,7 @@ export default defineSchema({
     role: v.string(),
     profileImage: v.optional(v.string()),
     walletBalance: v.number(),
+    passwordHash: v.optional(v.string()),
     emailVerified: v.optional(v.boolean()),
     firebaseUid: v.optional(v.string()),
     verificationToken: v.optional(v.string()),
@@ -53,6 +54,18 @@ export default defineSchema({
     expiresAt: v.number(),
   }).index("by_session_id", ["sessionId"])
     .index("by_user_id", ["userId"]),
+
+  transactions: defineTable({
+    userId: v.id("users"),
+    type: v.string(),
+    amount: v.number(),
+    reference: v.string(),
+    status: v.string(),
+    description: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+  }).index("by_user_id", ["userId"])
+    .index("by_reference", ["reference"]),
 
   orders: defineTable({
     userId: v.string(),

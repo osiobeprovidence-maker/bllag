@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Wallet as WalletIcon, Gift, CreditCard, ArrowUpRight, ArrowDownLeft, Plus, Send, Clock } from 'lucide-react';
+import { Wallet as WalletIcon, Gift, Plus, Send, Clock, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { useAuthStore } from '../store';
 import { Navigate, Link } from 'react-router-dom';
 
@@ -8,8 +8,6 @@ export function Wallet() {
   const { isAuthenticated, user, updateBalance } = useAuthStore();
   const [giftEmail, setGiftEmail] = useState('');
   const [giftAmount, setGiftAmount] = useState('');
-  const [depositAmount, setDepositAmount] = useState('');
-  const [showDeposit, setShowDeposit] = useState(false);
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
@@ -28,17 +26,6 @@ export function Wallet() {
     }
   };
 
-  const handleDeposit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const amt = parseFloat(depositAmount);
-    if (amt > 0) {
-      updateBalance(amt, 'deposit', 'Wallet Top-up');
-      setDepositAmount('');
-      setShowDeposit(false);
-      alert('Funds added successfully!');
-    }
-  };
-
   return (
     <div className="pt-24 pb-24 min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -50,47 +37,16 @@ export function Wallet() {
           <div className="bg-muted p-6 border border-gray-200 min-w-[240px] text-right">
             <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1">Available Balance</p>
             <p className="text-4xl font-black text-accent">₦{user.walletBalance.toLocaleString()}</p>
-            <button 
-              onClick={() => setShowDeposit(true)}
+            <Link
+              to="/wallet/top-up"
               className="mt-4 flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-accent transition-colors w-full"
             >
               <Plus className="h-3 w-3" /> Top Up Wallet
-            </button>
+            </Link>
           </div>
         </div>
 
-        {showDeposit && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-12 bg-accent/5 p-8 border border-accent/20 max-w-2xl mx-auto"
-          >
-            <h3 className="text-xl font-black uppercase tracking-tight mb-4">Top Up Funds</h3>
-            <form onSubmit={handleDeposit} className="flex gap-4">
-              <input 
-                type="number" 
-                placeholder="Amount (₦)"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                required
-                className="flex-1 bg-background border border-gray-300 p-4 focus:outline-none focus:border-accent transition-colors"
-              />
-              <button type="submit" className="bg-accent text-white px-8 py-4 text-xs font-bold uppercase tracking-widest hover:bg-primary transition-colors">
-                Confirm
-              </button>
-              <button 
-                type="button"
-                onClick={() => setShowDeposit(false)}
-                className="px-4 py-4 text-xs font-bold uppercase tracking-widest"
-              >
-                Cancel
-              </button>
-            </form>
-          </motion.div>
-        )}
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Controls */}
           <div className="lg:col-span-2 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Send Gift */}
@@ -102,8 +58,8 @@ export function Wallet() {
                 <form onSubmit={handleGift} className="space-y-4">
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Recipient Email</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       value={giftEmail}
                       onChange={(e) => setGiftEmail(e.target.value)}
                       placeholder="friend@example.com"
@@ -113,8 +69,8 @@ export function Wallet() {
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Amount (₦)</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       value={giftAmount}
                       onChange={(e) => setGiftAmount(e.target.value)}
                       placeholder="0.00"
@@ -149,8 +105,8 @@ export function Wallet() {
                           </span>
                         </div>
                         <div className="mt-3 w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
-                          <div 
-                            className="bg-accent h-full transition-all duration-500" 
+                          <div
+                            className="bg-accent h-full transition-all duration-500"
                             style={{ width: `${(plan.paidInstallments / plan.installmentsCount) * 100}%` }}
                           ></div>
                         </div>
@@ -161,9 +117,6 @@ export function Wallet() {
                       <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">No active plans</p>
                     </div>
                   )}
-                  <button className="w-full border border-gray-300 py-3 text-[10px] font-bold uppercase tracking-widest hover:border-accent transition-colors">
-                    View All Installment Plans
-                  </button>
                 </div>
               </div>
             </div>
@@ -174,27 +127,35 @@ export function Wallet() {
                 <h3 className="text-lg font-black uppercase tracking-tight">Transaction History</h3>
                 <button className="text-[10px] font-bold uppercase tracking-widest text-accent hover:underline">Download Statement</button>
               </div>
-              <div className="space-y-2">
-                {user.transactions.map((tx) => (
-                  <div key={tx.id} className="bg-background p-4 border border-gray-100 flex items-center justify-between hover:border-accent/30 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-full ${tx.amount > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                        {tx.amount > 0 ? <ArrowDownLeft className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
+              {user.transactions.length > 0 ? (
+                <div className="space-y-2">
+                  {user.transactions.map((tx) => (
+                    <div key={tx.id} className="bg-background p-4 border border-gray-100 flex items-center justify-between hover:border-accent/30 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-full ${tx.amount > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                          {tx.amount > 0 ? <ArrowDownLeft className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm uppercase tracking-tight">{tx.description}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{new Date(tx.date).toLocaleDateString()} • {new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-sm uppercase tracking-tight">{tx.description}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{new Date(tx.date).toLocaleDateString()} • {new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      <div className="text-right">
+                        <p className={`font-black text-lg ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {tx.amount > 0 ? '+' : ''}₦{tx.amount.toLocaleString()}
+                        </p>
+                        <p className="text-[8px] uppercase tracking-widest font-bold text-muted-foreground">{tx.type}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`font-black text-lg ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {tx.amount > 0 ? '+' : ''}₦{tx.amount.toLocaleString()}
-                      </p>
-                      <p className="text-[8px] uppercase tracking-widest font-bold text-muted-foreground">{tx.type}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 border border-dashed border-gray-200">
+                  <WalletIcon className="h-10 w-10 mx-auto text-gray-300 mb-4" />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">No transactions yet</p>
+                  <p className="text-[9px] text-muted-foreground mt-2">Your wallet credits will appear here after you make a deposit.</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -202,22 +163,25 @@ export function Wallet() {
           <div className="space-y-8">
             <div className="bg-primary text-primary-foreground p-8">
               <h3 className="text-xl font-black uppercase tracking-tight mb-4">Wallet Security</h3>
-              <p className="text-sm text-primary-foreground/80 mb-6">Your wallet is protected by 256-bit encryption. Always keep your password private.</p>
-              <button className="w-full bg-white text-primary py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent hover:text-white transition-colors">
-                Setup Pin
-              </button>
+              <p className="text-sm text-primary-foreground/80 mb-6">Your wallet is protected by 256-bit encryption.</p>
+              <Link
+                to="/security"
+                className="block w-full bg-white text-primary py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent hover:text-white transition-colors text-center"
+              >
+                Manage Security
+              </Link>
             </div>
 
             <div className="bg-muted p-8 border border-gray-200">
               <h3 className="text-xs font-bold uppercase tracking-widest mb-6 border-b pb-2">Wallet FAQ</h3>
               <div className="space-y-4">
                 <div>
-                  <p className="text-xs font-bold uppercase mb-1">How do I withdraw?</p>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">Wallet credits can be used for purchases on bllag. Direct withdrawals to bank accounts are processed within 24-48 hours.</p>
+                  <p className="text-xs font-bold uppercase mb-1">How do I add funds?</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Use the Top Up button to add funds via Paystack.</p>
                 </div>
                 <div>
                   <p className="text-xs font-bold uppercase mb-1">What is PSS?</p>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">"Pay Small Small" is our interest-free installment plan allowing you to spread payments over 6 weeks.</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">"Pay Small Small" is our interest-free installment plan.</p>
                 </div>
               </div>
             </div>

@@ -6,6 +6,46 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 const TOKEN_EXPIRY_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MS = 60 * 1000;
+const PBKDF2_ITERATIONS = 100000;
+const PBKDF2_KEY_LENGTH = 64;
+
+function arrayBufferToHex(buf: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function hexToArrayBuffer(hex: string): ArrayBuffer {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+  }
+  return bytes.buffer;
+}
+
+async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(32));
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const derived = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+    key,
+    PBKDF2_KEY_LENGTH * 8
+  );
+  return `${arrayBufferToHex(salt)}:${arrayBufferToHex(derived)}`;
+}
+
+async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  const [saltHex, hashHex] = stored.split(":");
+  if (!saltHex || !hashHex) return false;
+  const salt = hexToArrayBuffer(saltHex);
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const derived = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+    key,
+    PBKDF2_KEY_LENGTH * 8
+  );
+  return hashHex === arrayBufferToHex(derived);
+}
 
 async function sha256(message: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -14,6 +54,13 @@ async function sha256(message: string): Promise<string> {
   return Array.from(new Uint8Array(hashBuffer))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+function validatePasswordStrength(password: string): void {
+  if (password.length < 8) throw new Error("Password must be at least 8 characters.");
+  if (!/[A-Z]/.test(password)) throw new Error("Password must contain an uppercase letter.");
+  if (!/[a-z]/.test(password)) throw new Error("Password must contain a lowercase letter.");
+  if (!/[0-9]/.test(password)) throw new Error("Password must contain a number.");
 }
 
 export const sendMagicLink = action({
@@ -142,7 +189,7 @@ export const verifyMagicLink = mutation({
         name,
         email,
         role,
-        walletBalance: 50000,
+        walletBalance: 0,
       });
       user = await ctx.db.get(userId);
     }
@@ -167,6 +214,7 @@ export const verifyMagicLink = mutation({
         profileImage: user.profileImage,
         walletBalance: user.walletBalance,
         address: user.address,
+        hasPassword: !!user.passwordHash,
       },
     };
   },
@@ -194,6 +242,7 @@ export const getSession = query({
       profileImage: user.profileImage,
       walletBalance: user.walletBalance,
       address: user.address,
+      hasPassword: !!user.passwordHash,
     };
   },
 });
@@ -209,5 +258,111 @@ export const logout = mutation({
     if (session) {
       await ctx.db.delete(session._id);
     }
+  },
+});
+
+export const checkUserPasswordStatus = query({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase().trim()))
+      .first();
+    return {
+      exists: !!user,
+      hasPassword: !!user?.passwordHash,
+    };
+  },
+});
+
+export const loginWithPassword = mutation({
+  args: {
+    email: v.string(),
+    password: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const email = args.email.toLowerCase().trim();
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
+
+    if (!user) throw new Error("No account found with this email.");
+    if (!user.passwordHash) throw new Error("no_password");
+
+    const valid = await verifyPassword(args.password, user.passwordHash);
+    if (!valid) throw new Error("Wrong password.");
+
+    const sessionId = crypto.randomUUID();
+    await ctx.db.insert("sessions", {
+      sessionId,
+      userId: user._id,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + SESSION_DURATION_MS,
+    });
+
+    return {
+      sessionId,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profileImage: user.profileImage,
+        walletBalance: user.walletBalance,
+        address: user.address,
+        hasPassword: true,
+      },
+    };
+  },
+});
+
+export const setPassword = mutation({
+  args: {
+    sessionId: v.string(),
+    password: v.string(),
+  },
+  handler: async (ctx, args) => {
+    validatePasswordStrength(args.password);
+
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
+      .first();
+    if (!session || session.expiresAt < Date.now()) throw new Error("Not authenticated.");
+
+    const user = await ctx.db.get(session.userId);
+    if (!user) throw new Error("User not found.");
+    if (user.passwordHash) throw new Error("Password already set. Use changePassword instead.");
+
+    const hash = await hashPassword(args.password);
+    await ctx.db.patch(user._id, { passwordHash: hash });
+  },
+});
+
+export const changePassword = mutation({
+  args: {
+    sessionId: v.string(),
+    currentPassword: v.string(),
+    newPassword: v.string(),
+  },
+  handler: async (ctx, args) => {
+    validatePasswordStrength(args.newPassword);
+
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
+      .first();
+    if (!session || session.expiresAt < Date.now()) throw new Error("Not authenticated.");
+
+    const user = await ctx.db.get(session.userId);
+    if (!user) throw new Error("User not found.");
+    if (!user.passwordHash) throw new Error("No password set. Use setPassword instead.");
+
+    const valid = await verifyPassword(args.currentPassword, user.passwordHash);
+    if (!valid) throw new Error("Current password is incorrect.");
+
+    const hash = await hashPassword(args.newPassword);
+    await ctx.db.patch(user._id, { passwordHash: hash });
   },
 });

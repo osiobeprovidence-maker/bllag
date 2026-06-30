@@ -34,6 +34,7 @@ interface UserData {
   role: UserRole;
   profileImage?: string;
   walletBalance: number;
+  hasPassword?: boolean;
   transactions: Transaction[];
   installments: InstallmentPlan[];
   membership: Membership;
@@ -72,10 +73,8 @@ export const useAuthStore = create<AuthState>()(
           name,
           email,
           role,
-          walletBalance: 50000,
-          transactions: [
-            { id: '1', type: 'deposit', amount: 50000, date: new Date().toISOString(), description: 'Welcome Bonus' }
-          ],
+          walletBalance: 0,
+          transactions: [],
           installments: [],
           membership: { level: 'none', status: 'inactive' }
         }
@@ -97,8 +96,9 @@ export const useAuthStore = create<AuthState>()(
         user: user ? {
           ...user,
           profileImage: user.profileImage,
-          walletBalance: user.walletBalance ?? 50000,
-          transactions: user.transactions ?? [{ id: '1', type: 'deposit', amount: 50000, date: new Date().toISOString(), description: 'Welcome Bonus' }],
+          walletBalance: user.walletBalance ?? 0,
+          hasPassword: user.hasPassword ?? false,
+          transactions: user.transactions ?? [],
           installments: user.installments ?? [],
           membership: user.membership ?? { level: 'none', status: 'inactive' }
         } : null
