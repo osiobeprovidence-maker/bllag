@@ -9,7 +9,8 @@ import {
   LayoutDashboard, 
   CreditCard, 
   Megaphone, 
-  ChevronRight
+  ChevronRight,
+  Palette
 } from 'lucide-react';
 import { Navigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -27,12 +28,19 @@ import { MarketingSection } from '../components/admin/MarketingSection';
 import { AddProductModal } from '../components/admin/AddProductModal';
 import { AnalyticsSection } from '../components/admin/AnalyticsSection';
 import { CollectionsSection } from '../components/admin/CollectionsSection';
+import { WebsiteCustomization } from '../components/admin/WebsiteCustomization';
 
-type AdminTab = 'overview' | 'analytics' | 'products' | 'collections' | 'orders' | 'customers' | 'installments' | 'marketing';
+type AdminTab = 'overview' | 'analytics' | 'products' | 'collections' | 'orders' | 'customers' | 'installments' | 'marketing' | 'customization';
 
 export function AdminDashboard() {
   const { isAuthenticated, user } = useAuthStore();
-  const { products, orders, collections, customers, installments, loading, addProduct, updateProduct, deleteProduct, updateOrder, addCollection } = useAdmin();
+  const { products, orders, collections, customers, installments, loading, addProduct, updateProduct, deleteProduct, updateOrder, addCollection,
+    banners, categoryImages, sections, promoBanners, media, settings,
+    createBanner, updateBanner, removeBanner, reorderBanner,
+    createCategory, updateCategory, removeCategory,
+    upsertSection, createPromoBanner, updatePromoBanner, removePromoBanner,
+    setSetting, createMedia, removeMedia,
+  } = useAdmin();
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -66,6 +74,7 @@ export function AdminDashboard() {
     { id: 'orders', name: 'Orders & Sales', icon: ShoppingCart },
     { id: 'customers', name: 'Customers', icon: Users },
     { id: 'installments', name: 'Pay Small Small', icon: CreditCard },
+    { id: 'customization', name: 'Website Customization', icon: Palette },
     { id: 'marketing', name: 'Marketing & Ads', icon: Megaphone },
   ];
 
@@ -201,6 +210,30 @@ export function AdminDashboard() {
                 {activeTab === 'orders' && <OrdersSection orders={orders} onUpdate={updateOrder} />}
                 {activeTab === 'customers' && <CustomersSection customers={customers} />}
                 {activeTab === 'installments' && <InstallmentsSection installments={installments} />}
+                {activeTab === 'customization' && (
+                  <WebsiteCustomization
+                    banners={banners}
+                    categoryImages={categoryImages}
+                    sections={sections}
+                    promoBanners={promoBanners}
+                    media={media}
+                    settings={settings}
+                    createBanner={createBanner}
+                    updateBanner={updateBanner}
+                    removeBanner={removeBanner}
+                    reorderBanner={reorderBanner}
+                    createCategory={createCategory}
+                    updateCategory={updateCategory}
+                    removeCategory={removeCategory}
+                    upsertSection={upsertSection}
+                    createPromoBanner={createPromoBanner}
+                    updatePromoBanner={updatePromoBanner}
+                    removePromoBanner={removePromoBanner}
+                    setSetting={setSetting}
+                    createMedia={createMedia}
+                    removeMedia={removeMedia}
+                  />
+                )}
                 {activeTab === 'marketing' && <MarketingSection />}
               </>
             )}

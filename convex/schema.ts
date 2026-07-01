@@ -185,4 +185,65 @@ export default defineSchema({
     createdAt: v.string(),
   }).index("by_user_id", ["userId"])
     .index("by_product_id", ["productId"]),
+
+  homepageBanners: defineTable({
+    image: v.string(),
+    smallHeading: v.string(),
+    mainHeading: v.string(),
+    description: v.string(),
+    ctaText: v.string(),
+    ctaLink: v.string(),
+    displayOrder: v.number(),
+    active: v.boolean(),
+    startDate: v.optional(v.string()),
+    endDate: v.optional(v.string()),
+    createdAt: v.string(),
+  }).index("by_order", ["displayOrder"])
+    .index("by_active", ["active"]),
+
+  categoryImages: defineTable({
+    name: v.string(),
+    image: v.string(),
+    link: v.string(),
+    displayOrder: v.number(),
+    visible: v.boolean(),
+    createdAt: v.string(),
+  }).index("by_order", ["displayOrder"]),
+
+  homepageSections: defineTable({
+    sectionKey: v.string(),
+    title: v.optional(v.string()),
+    visible: v.boolean(),
+    displayOrder: v.number(),
+    settings: v.optional(v.any()),
+    createdAt: v.string(),
+  }).index("by_section_key", ["sectionKey"]),
+
+  promotionalBanners: defineTable({
+    desktopImage: v.string(),
+    mobileImage: v.optional(v.string()),
+    title: v.string(),
+    subtitle: v.optional(v.string()),
+    ctaText: v.string(),
+    ctaLink: v.string(),
+    bgColor: v.optional(v.string()),
+    overlayOpacity: v.optional(v.number()),
+    priority: v.number(),
+    active: v.boolean(),
+    startDate: v.optional(v.string()),
+    endDate: v.optional(v.string()),
+    createdAt: v.string(),
+  }).index("by_priority", ["priority"]),
+
+  websiteSettings: defineTable({
+    key: v.string(),
+    value: v.any(),
+  }).index("by_key", ["key"]),
+
+  mediaLibrary: defineTable({
+    url: v.string(),
+    name: v.string(),
+    alt: v.optional(v.string()),
+    createdAt: v.string(),
+  }),
 });
