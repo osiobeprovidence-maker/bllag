@@ -64,7 +64,14 @@ function HeroSlider({ banners }: { banners: any[] }) {
           className="absolute inset-0 z-0 transition-opacity"
           style={{ opacity: i === current ? 1 : 0, transitionDuration: `${animSpeed}ms` }}
         >
-          <img referrerPolicy="no-referrer" src={banner.image} alt={banner.mainHeading} className="w-full h-full object-cover object-center" />
+          <img referrerPolicy="no-referrer" 
+            src={banner.desktopImage || banner.mobileImage} 
+            alt={banner.mainHeading} 
+            className="w-full h-full object-cover"
+            style={{ objectPosition: banner.objectPosition || 'center' }}
+            srcSet={`${banner.desktopImage || banner.mobileImage} 1920w, ${banner.tabletImage || banner.desktopImage || banner.mobileImage} 768w, ${banner.mobileImage || banner.desktopImage} 375w`}
+            sizes="(max-width: 375px) 375px, (max-width: 768px) 768px, 1920px"
+          />
         </div>
       ))}
       <div className="relative z-10 text-center text-primary px-4 bg-white/90 p-8 m-4 max-w-lg shadow-xl">

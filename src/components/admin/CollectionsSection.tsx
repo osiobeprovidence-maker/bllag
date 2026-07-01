@@ -52,11 +52,7 @@ export function CollectionsSection({ collections, onAdd, onUpdate, onDelete }: C
           <ImageUploader
             value={newColl.image}
             onChange={(url) => setNewColl({ ...newColl, image: url })}
-            recommendedWidth={1200}
-            recommendedHeight={1200}
-            minWidth={400}
-            minHeight={400}
-            aspectRatio="1:1"
+            imageType="collection"
             label="Collection Image"
           />
           <div className="flex gap-2">

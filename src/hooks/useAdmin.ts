@@ -38,6 +38,8 @@ export function useAdmin() {
   const setSetting = useMutation(api.websiteSettings.set);
   const createMedia = useMutation(api.mediaLibrary.create);
   const removeMedia = useMutation(api.mediaLibrary.remove);
+  const renameMedia = useMutation(api.mediaLibrary.rename);
+  const updateAlt = useMutation(api.mediaLibrary.updateAlt);
   const createCampaign = useMutation(api.campaigns.create);
   const updateCampaign = useMutation(api.campaigns.update);
   const removeCampaign = useMutation(api.campaigns.remove);
@@ -129,6 +131,9 @@ export function useAdmin() {
     setSetting: (key: string, value: any) => setSetting({ sessionId, key, value }),
     createMedia: wrap(createMedia),
     removeMedia: wrapIdOnly(removeMedia),
+    renameMedia: ({ id, name }: { id: string; name: string }) => renameMedia({ sessionId, id: id as any, name }),
+    updateAlt: ({ id, alt, title, description }: { id: string; alt?: string; title?: string; description?: string }) =>
+      updateAlt({ sessionId, id: id as any, alt, title, description }),
     createCampaign: wrap(createCampaign),
     updateCampaign: wrapWithId(updateCampaign),
     removeCampaign: wrapIdOnly(removeCampaign),

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Image, Trash2, Edit2, Plus, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { EmptyState } from '../ui/EmptyState';
 import { ImageUploader } from './ImageUploader';
+import { FOCAL_POINTS } from '../../lib/imageConfig';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 
@@ -28,6 +29,8 @@ interface WebsiteCustomizationProps {
   setSetting: (key: string, value: any) => any;
   createMedia: (data: any) => any;
   removeMedia: (id: string) => any;
+  renameMedia?: (data: { id: string; name: string }) => any;
+  updateAlt?: (data: { id: string; alt?: string; title?: string; description?: string }) => any;
 }
 
 const cmsTabs: { id: CmsTab; name: string }[] = [
@@ -49,14 +52,17 @@ const DEFAULT_SECTIONS = [
   { sectionKey: 'instagram', title: 'Instagram Feed', visible: true, displayOrder: 7 },
 ];
 
+type PreviewDevice = 'desktop' | 'tablet' | 'mobile';
+
 export function WebsiteCustomization({
   banners, categoryImages, sections, promoBanners, media, settings,
   createBanner, updateBanner, removeBanner, reorderBanner,
   createCategory, updateCategory, removeCategory,
   upsertSection, createPromoBanner, updatePromoBanner, removePromoBanner,
-  setSetting, createMedia, removeMedia,
+  setSetting, createMedia, removeMedia, renameMedia, updateAlt,
 }: WebsiteCustomizationProps) {
   const [activeCmsTab, setActiveCmsTab] = useState<CmsTab>('slider-settings');
+  const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
 
   const allUndefined = banners === undefined && categoryImages === undefined && sections === undefined && promoBanners === undefined && media === undefined;
   if (allUndefined) {
@@ -67,25 +73,46 @@ export function WebsiteCustomization({
     );
   }
 
+  const maxWClass = previewDevice === 'mobile' ? 'max-w-[375px]' : previewDevice === 'tablet' ? 'max-w-[768px]' : 'max-w-full';
+
   return (
     <div className="space-y-8">
       <div className="bg-white border border-gray-200 shadow-sm overflow-x-auto">
-        <div className="flex">
-          {cmsTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveCmsTab(tab.id)}
-              className={`px-6 py-4 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${
-                activeCmsTab === tab.id
-                  ? 'bg-primary text-white shadow-lg'
-                  : 'text-muted-foreground hover:bg-gray-50 hover:text-primary'
-              }`}
-            >
-              {tab.name}
-            </button>
-          ))}
+        <div className="flex items-center justify-between">
+          <div className="flex">
+            {cmsTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveCmsTab(tab.id)}
+                className={`px-6 py-4 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                  activeCmsTab === tab.id
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'text-muted-foreground hover:bg-gray-50 hover:text-primary'
+                }`}
+              >
+                {tab.name}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1 px-4 border-l border-gray-100">
+            {(['desktop', 'tablet', 'mobile'] as PreviewDevice[]).map((d) => (
+              <button
+                key={d}
+                onClick={() => setPreviewDevice(d)}
+                className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest border transition-all ${
+                  previewDevice === d
+                    ? 'bg-accent text-white border-accent'
+                    : 'bg-white text-muted-foreground border-gray-200 hover:border-accent'
+                }`}
+              >
+                {d === 'desktop' ? 'Desktop' : d === 'tablet' ? 'Tablet' : 'Mobile'}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
+      <div className={`mx-auto transition-all duration-300 ${maxWClass}`}>
 
       {activeCmsTab === 'slider-settings' && (
         <SliderSettingsTab settings={settings} setSetting={setSetting} />
@@ -103,8 +130,9 @@ export function WebsiteCustomization({
         <PromotionalBannersTab promoBanners={promoBanners} createPromoBanner={createPromoBanner} updatePromoBanner={updatePromoBanner} removePromoBanner={removePromoBanner} media={media} />
       )}
       {activeCmsTab === 'media-library' && (
-        <MediaLibraryTab media={media} createMedia={createMedia} removeMedia={removeMedia} />
+        <MediaLibraryTab media={media} createMedia={createMedia} removeMedia={removeMedia} renameMedia={renameMedia} updateAlt={updateAlt} />
       )}
+      </div>
     </div>
   );
 }
@@ -195,22 +223,25 @@ function HeroBannersTab({ banners, createBanner, updateBanner, removeBanner, reo
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
-    image: '', smallHeading: '', mainHeading: '', description: '', ctaText: '', ctaLink: '',
-    displayOrder: 1, active: true, startDate: '', endDate: '', altText: '',
+    desktopImage: '', tabletImage: '', mobileImage: '', smallHeading: '', mainHeading: '',
+    description: '', ctaText: '', ctaLink: '', displayOrder: 1, active: true,
+    startDate: '', endDate: '', altText: '', objectPosition: 'center',
   });
 
   const resetForm = () => {
-    setForm({ image: '', smallHeading: '', mainHeading: '', description: '', ctaText: '', ctaLink: '', displayOrder: 1, active: true, startDate: '', endDate: '', altText: '' });
+    setForm({ desktopImage: '', tabletImage: '', mobileImage: '', smallHeading: '', mainHeading: '', description: '', ctaText: '', ctaLink: '', displayOrder: 1, active: true, startDate: '', endDate: '', altText: '', objectPosition: 'center' });
     setEditingId(null);
     setShowForm(false);
   };
 
   const handleEdit = (b: any) => {
     setForm({
-      image: b.image || '', smallHeading: b.smallHeading || '', mainHeading: b.mainHeading || '',
+      desktopImage: b.desktopImage || '', tabletImage: b.tabletImage || '', mobileImage: b.mobileImage || '',
+      smallHeading: b.smallHeading || '', mainHeading: b.mainHeading || '',
       description: b.description || '', ctaText: b.ctaText || '', ctaLink: b.ctaLink || '',
       displayOrder: b.displayOrder ?? 1, active: b.active ?? true,
       startDate: b.startDate || '', endDate: b.endDate || '', altText: b.altText || '',
+      objectPosition: b.objectPosition || 'center',
     });
     setEditingId(b.id);
     setShowForm(true);
@@ -218,6 +249,8 @@ function HeroBannersTab({ banners, createBanner, updateBanner, removeBanner, reo
 
   const handleSave = () => {
     const data = { ...form };
+    if (!data.tabletImage) delete data.tabletImage;
+    if (!data.mobileImage) delete data.mobileImage;
     if (!data.startDate) delete data.startDate;
     if (!data.endDate) delete data.endDate;
     if (editingId) {
@@ -227,6 +260,8 @@ function HeroBannersTab({ banners, createBanner, updateBanner, removeBanner, reo
     }
     resetForm();
   };
+
+  const previewImage = form.desktopImage || form.mobileImage || '';
 
   return (
     <div className="bg-white border border-gray-200 shadow-sm">
@@ -239,38 +274,59 @@ function HeroBannersTab({ banners, createBanner, updateBanner, removeBanner, reo
 
       {showForm && (
         <div className="bg-gray-50 border-b border-gray-200 p-8 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
               <ImageUploader
-                value={form.image}
-                onChange={(url) => setForm({ ...form, image: url })}
-                label="Hero Image"
-                recommendedWidth={1920}
-                recommendedHeight={900}
-                minWidth={800}
-                minHeight={350}
-                aspectRatio="16:9"
-                showAltInput
+                value={form.desktopImage}
+                onChange={(url) => setForm({ ...form, desktopImage: url })}
+                imageType="heroBanner"
+                label="Desktop Image (16:9)"
+                showAltInput={!form.desktopImage}
                 altValue={form.altText}
                 onAltChange={(val) => setForm({ ...form, altText: val })}
                 mediaLibrary={media}
               />
             </div>
-            {form.image && (
-              <div className="md:col-span-2 bg-white border border-gray-200 overflow-hidden">
-                <div className="relative h-[200px] md:h-[300px] bg-gray-100">
-                  <img src={form.image} alt={form.altText || 'Preview'} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-8 text-center" style={{ background: 'rgba(0,0,0,0.3)' }}>
-                    <div className="bg-white/90 text-black px-4 py-2 mb-4">
-                      <span className="text-accent font-bold text-xs uppercase tracking-wider">{form.smallHeading || 'Small Heading'}</span>
-                    </div>
-                    <h3 className="text-3xl font-black uppercase tracking-tighter text-white drop-shadow-lg mb-2">{form.mainHeading || 'Main Heading'}</h3>
-                    <p className="text-sm text-white/80 mb-4 max-w-md">{form.description || 'Description text'}</p>
-                    <span className="bg-white text-black px-8 py-3 text-xs font-bold uppercase tracking-widest">{form.ctaText || 'Shop Now'}</span>
+            <div>
+              <ImageUploader
+                value={form.tabletImage}
+                onChange={(url) => setForm({ ...form, tabletImage: url })}
+                label="Tablet Image (optional)"
+                imageType="heroBanner"
+                mediaLibrary={media}
+              />
+            </div>
+            <div>
+              <ImageUploader
+                value={form.mobileImage}
+                onChange={(url) => setForm({ ...form, mobileImage: url })}
+                label="Mobile Image (optional)"
+                imageType="heroBanner"
+                mediaLibrary={media}
+              />
+            </div>
+          </div>
+          {previewImage && (
+            <div className="bg-white border border-gray-200 overflow-hidden">
+              <div className="relative h-[200px] md:h-[300px] bg-gray-100">
+                <img
+                  src={previewImage}
+                  alt={form.altText || 'Preview'}
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: form.objectPosition }}
+                />
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-8 text-center" style={{ background: 'rgba(0,0,0,0.3)' }}>
+                  <div className="bg-white/90 text-black px-4 py-2 mb-4">
+                    <span className="text-accent font-bold text-xs uppercase tracking-wider">{form.smallHeading || 'Small Heading'}</span>
                   </div>
+                  <h3 className="text-3xl font-black uppercase tracking-tighter text-white drop-shadow-lg mb-2">{form.mainHeading || 'Main Heading'}</h3>
+                  <p className="text-sm text-white/80 mb-4 max-w-md">{form.description || 'Description text'}</p>
+                  <span className="bg-white text-black px-8 py-3 text-xs font-bold uppercase tracking-widest">{form.ctaText || 'Shop Now'}</span>
                 </div>
               </div>
-            )}
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Small Heading</label>
               <input type="text" value={form.smallHeading} onChange={(e) => setForm({ ...form, smallHeading: e.target.value })} className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
@@ -294,6 +350,25 @@ function HeroBannersTab({ banners, createBanner, updateBanner, removeBanner, reo
             <div>
               <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Display Order</label>
               <input type="number" value={form.displayOrder} onChange={(e) => setForm({ ...form, displayOrder: Number(e.target.value) })} className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Focal Point</label>
+              <div className="flex flex-wrap gap-1">
+                {FOCAL_POINTS.map((fp) => (
+                  <button
+                    key={fp.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, objectPosition: fp.value })}
+                    className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest border transition-all ${
+                      form.objectPosition === fp.value
+                        ? 'bg-accent text-white border-accent'
+                        : 'bg-white text-muted-foreground border-gray-200 hover:border-accent'
+                    }`}
+                  >
+                    {fp.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -341,7 +416,7 @@ function HeroBannersTab({ banners, createBanner, updateBanner, removeBanner, reo
                 <tr key={b.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-8 py-4">
                     <div className="w-16 h-12 bg-gray-100 border border-gray-200 overflow-hidden">
-                      <img src={b.image} alt={b.altText || b.mainHeading} className="w-full h-full object-cover" />
+                      <img src={b.desktopImage || b.mobileImage} alt={b.altText || b.mainHeading} className="w-full h-full object-cover" />
                     </div>
                   </td>
                   <td className="px-8 py-4">
@@ -426,11 +501,7 @@ function CategoryImagesTab({ categoryImages, createCategory, updateCategory, rem
                 value={form.image}
                 onChange={(url) => setForm({ ...form, image: url })}
                 label="Category Image"
-                recommendedWidth={200}
-                recommendedHeight={200}
-                minWidth={100}
-                minHeight={100}
-                aspectRatio="1:1"
+                imageType="category"
                 mediaLibrary={media}
               />
             </div>
@@ -651,11 +722,7 @@ function SectionRow({ section, onUpdate }: { section: any; onUpdate?: (s: any) =
                     value={settings.image || ''}
                     onChange={(url) => setSettings({ ...settings, image: url })}
                     label="Banner Image"
-                    recommendedWidth={900}
-                    recommendedHeight={1200}
-                    minWidth={450}
-                    minHeight={600}
-                    aspectRatio="3:4"
+                    imageType="flashSale"
                   />
                 </div>
                 <div className="space-y-4">
@@ -742,11 +809,7 @@ function PromotionalBannersTab({ promoBanners, createPromoBanner, updatePromoBan
                 value={form.desktopImage}
                 onChange={(url) => setForm({ ...form, desktopImage: url })}
                 label="Desktop Image"
-                recommendedWidth={1920}
-                recommendedHeight={900}
-                minWidth={800}
-                minHeight={350}
-                aspectRatio="16:9"
+                imageType="promotionalBannerDesktop"
                 mediaLibrary={media}
               />
             </div>
@@ -755,11 +818,7 @@ function PromotionalBannersTab({ promoBanners, createPromoBanner, updatePromoBan
                 value={form.mobileImage}
                 onChange={(url) => setForm({ ...form, mobileImage: url })}
                 label="Mobile Image"
-                recommendedWidth={600}
-                recommendedHeight={800}
-                minWidth={300}
-                minHeight={400}
-                aspectRatio="3:4"
+                imageType="promotionalBannerMobile"
                 mediaLibrary={media}
               />
             </div>
@@ -885,23 +944,63 @@ function PromotionalBannersTab({ promoBanners, createPromoBanner, updatePromoBan
   );
 }
 
-function MediaLibraryTab({ media, createMedia, removeMedia }: any) {
+function MediaLibraryTab({ media, createMedia, removeMedia, renameMedia, updateAlt }: any) {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ url: '', name: '' });
+  const [form, setForm] = useState({ url: '', name: '', alt: '', title: '', description: '' });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showAltEditor, setShowAltEditor] = useState<string | null>(null);
+  const [altForm, setAltForm] = useState({ alt: '', title: '', description: '' });
 
   const handleSave = () => {
-    createMedia(form);
-    setForm({ url: '', name: '' });
+    createMedia({ url: form.url, name: form.name, alt: form.alt || undefined, title: form.title || undefined, description: form.description || undefined });
+    setForm({ url: '', name: '', alt: '', title: '', description: '' });
     setShowForm(false);
   };
 
+  const handleCopyUrl = async (url: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {}
+  };
+
+  const handleRename = (id: string) => {
+    if (editName.trim()) {
+      renameMedia({ id, name: editName.trim() });
+    }
+    setEditingId(null);
+    setEditName('');
+  };
+
+  const handleSaveAlt = (id: string) => {
+    updateAlt({ id, alt: altForm.alt || undefined, title: altForm.title || undefined, description: altForm.description || undefined });
+    setShowAltEditor(null);
+  };
+
+  const filtered = searchQuery
+    ? media.filter((m: any) => m.name.toLowerCase().includes(searchQuery.toLowerCase()) || (m.alt && m.alt.toLowerCase().includes(searchQuery.toLowerCase())))
+    : media;
+
   return (
     <div className="bg-white border border-gray-200 shadow-sm">
-      <div className="p-8 border-b border-gray-100 flex items-center justify-between">
-        <h2 className="text-xl font-black uppercase tracking-tight">Media Library</h2>
-        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-primary text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-accent transition-all">
-          <Plus className="w-3 h-3" /> Add Media
-        </button>
+      <div className="p-8 border-b border-gray-100 flex items-center justify-between gap-4">
+        <h2 className="text-xl font-black uppercase tracking-tight shrink-0">Media Library</h2>
+        <div className="flex items-center gap-3 flex-1 max-w-md">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search media..."
+            className="w-full bg-gray-50 border border-gray-200 p-2.5 text-xs font-bold focus:outline-none focus:border-accent"
+          />
+          <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 text-[10px] font-black uppercase tracking-widest hover:bg-accent transition-all shrink-0">
+            <Plus className="w-3 h-3" /> Upload
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -912,21 +1011,33 @@ function MediaLibraryTab({ media, createMedia, removeMedia }: any) {
                 value={form.url}
                 onChange={(url) => setForm({ ...form, url })}
                 label="Upload Image"
-                recommendedWidth={1920}
-                recommendedHeight={900}
-                aspectRatio="16:9"
+                imageType="mediaLibrary"
+                showAltInput
+                altValue={form.alt}
+                onAltChange={(val) => setForm({ ...form, alt: val })}
+                mediaLibrary={media}
               />
             </div>
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Name</label>
-              <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Name</label>
+                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Title (optional)</label>
+                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Description (optional)</label>
+                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+              </div>
             </div>
           </div>
           <div className="flex gap-2">
             <button onClick={handleSave} disabled={!form.url || !form.name} className="flex-1 bg-primary text-white py-3 text-[10px] font-black uppercase tracking-widest hover:bg-accent transition-all disabled:opacity-50">
               Save Media
             </button>
-            <button onClick={() => { setShowForm(false); setForm({ url: '', name: '' }); }} className="px-6 py-3 border border-gray-300 text-[10px] font-black uppercase tracking-widest hover:bg-gray-100 transition-all">Cancel</button>
+            <button onClick={() => { setShowForm(false); setForm({ url: '', name: '', alt: '', title: '', description: '' }); }} className="px-6 py-3 border border-gray-300 text-[10px] font-black uppercase tracking-widest hover:bg-gray-100 transition-all">Cancel</button>
           </div>
         </div>
       )}
@@ -937,20 +1048,88 @@ function MediaLibraryTab({ media, createMedia, removeMedia }: any) {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-8">
-          {media.map((m: any) => (
+          {filtered.map((m: any) => (
             <div key={m.id} className="bg-white border border-gray-200 overflow-hidden group">
               <div className="aspect-square bg-gray-100 relative overflow-hidden">
-                <img src={m.url} alt={m.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                <button
-                  onClick={() => removeMedia(m.id)}
-                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
+                <img src={m.url} alt={m.alt || m.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                  <button
+                    onClick={() => handleCopyUrl(m.url, m.id)}
+                    className="bg-white text-black p-1.5 hover:bg-accent hover:text-white transition-all"
+                    title="Copy URL"
+                  >
+                    {copiedId === m.id ? <Check className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
+                  </button>
+                  <button
+                    onClick={() => { setShowAltEditor(m.id); setAltForm({ alt: m.alt || '', title: m.title || '', description: m.description || '' }); }}
+                    className="bg-white text-black p-1.5 hover:bg-accent hover:text-white transition-all"
+                    title="Edit Alt Text"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => removeMedia(m.id)}
+                    className="bg-red-500 text-white p-1.5 hover:bg-red-600 transition-all"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
               <div className="p-3">
-                <p className="text-[10px] font-black uppercase tracking-widest truncate">{m.name}</p>
+                {editingId === m.id ? (
+                  <div className="flex gap-1">
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 p-1 text-[9px] font-bold focus:outline-none focus:border-accent"
+                      autoFocus
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleRename(m.id); if (e.key === 'Escape') { setEditingId(null); setEditName(''); } }}
+                    />
+                    <button onClick={() => handleRename(m.id)} className="text-accent text-[9px] font-black uppercase"><Check className="w-3 h-3" /></button>
+                  </div>
+                ) : (
+                  <p
+                    className="text-[10px] font-black uppercase tracking-widest truncate cursor-pointer hover:text-accent"
+                    onDoubleClick={() => { setEditingId(m.id); setEditName(m.name); }}
+                    title="Double-click to rename"
+                  >{m.name}</p>
+                )}
               </div>
+              {showAltEditor === m.id && (
+                <div className="border-t border-gray-100 p-3 space-y-2 bg-gray-50">
+                  <input
+                    type="text"
+                    value={altForm.alt}
+                    onChange={(e) => setAltForm({ ...altForm, alt: e.target.value })}
+                    placeholder="Alt text"
+                    className="w-full bg-white border border-gray-200 p-2 text-[9px] font-bold focus:outline-none focus:border-accent"
+                  />
+                  <input
+                    type="text"
+                    value={altForm.title}
+                    onChange={(e) => setAltForm({ ...altForm, title: e.target.value })}
+                    placeholder="Title"
+                    className="w-full bg-white border border-gray-200 p-2 text-[9px] font-bold focus:outline-none focus:border-accent"
+                  />
+                  <textarea
+                    value={altForm.description}
+                    onChange={(e) => setAltForm({ ...altForm, description: e.target.value })}
+                    placeholder="Description"
+                    rows={2}
+                    className="w-full bg-white border border-gray-200 p-2 text-[9px] font-bold focus:outline-none focus:border-accent"
+                  />
+                  <div className="flex gap-1">
+                    <button onClick={() => handleSaveAlt(m.id)} className="text-accent text-[8px] font-black uppercase tracking-widest hover:underline">
+                      Save
+                    </button>
+                    <button onClick={() => setShowAltEditor(null)} className="text-muted-foreground text-[8px] font-black uppercase tracking-widest hover:underline">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

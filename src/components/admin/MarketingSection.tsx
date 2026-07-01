@@ -195,9 +195,7 @@ function CampaignsTab({ campaigns, createCampaign, updateCampaign, removeCampaig
                       value={form.bannerImage}
                       onChange={(url) => setForm({ ...form, bannerImage: url })}
                       label="Banner Image"
-                      recommendedWidth={1920} recommendedHeight={900}
-                      minWidth={800} minHeight={350}
-                      aspectRatio="16:9"
+                      imageType="campaign"
                     />
                   </div>
                   <div>

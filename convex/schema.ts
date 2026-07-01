@@ -187,7 +187,10 @@ export default defineSchema({
     .index("by_product_id", ["productId"]),
 
   homepageBanners: defineTable({
-    image: v.string(),
+    desktopImage: v.string(),
+    tabletImage: v.optional(v.string()),
+    mobileImage: v.optional(v.string()),
+    objectPosition: v.optional(v.string()),
     smallHeading: v.string(),
     mainHeading: v.string(),
     description: v.string(),
@@ -244,6 +247,11 @@ export default defineSchema({
     url: v.string(),
     name: v.string(),
     alt: v.optional(v.string()),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    fileSize: v.optional(v.number()),
+    width: v.optional(v.number()),
+    height: v.optional(v.number()),
     createdAt: v.string(),
   }),
 

@@ -30,7 +30,10 @@ export const getActive = query({
 export const create = mutation({
   args: {
     sessionId: v.string(),
-    image: v.string(),
+    desktopImage: v.string(),
+    tabletImage: v.optional(v.string()),
+    mobileImage: v.optional(v.string()),
+    objectPosition: v.optional(v.string()),
     smallHeading: v.string(),
     mainHeading: v.string(),
     description: v.string(),
@@ -62,7 +65,10 @@ export const update = mutation({
   args: {
     sessionId: v.string(),
     id: v.id("homepageBanners"),
-    image: v.optional(v.string()),
+    desktopImage: v.optional(v.string()),
+    tabletImage: v.optional(v.string()),
+    mobileImage: v.optional(v.string()),
+    objectPosition: v.optional(v.string()),
     smallHeading: v.optional(v.string()),
     mainHeading: v.optional(v.string()),
     description: v.optional(v.string()),

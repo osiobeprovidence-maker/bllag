@@ -40,7 +40,7 @@ export function AdminDashboard() {
     createBanner, updateBanner, removeBanner, reorderBanner,
     createCategory, updateCategory, removeCategory,
     upsertSection, createPromoBanner, updatePromoBanner, removePromoBanner,
-    setSetting, createMedia, removeMedia,
+    setSetting,     createMedia, removeMedia, renameMedia, updateAlt,
     createCampaign, updateCampaign, removeCampaign,
     createCoupon, updateCoupon, removeCoupon,
   } = useAdmin();
@@ -244,6 +244,8 @@ export function AdminDashboard() {
                       setSetting={setSetting}
                       createMedia={createMedia}
                       removeMedia={removeMedia}
+                      renameMedia={renameMedia}
+                      updateAlt={updateAlt}
                     />
                   )}
                   {activeTab === 'marketing' && (

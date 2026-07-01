@@ -2,10 +2,12 @@ import { useState, useRef, useCallback } from 'react';
 import { Upload, X, Image as ImageIcon, AlertCircle, Check, Loader2 } from 'lucide-react';
 import { useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
+import { IMAGE_CONFIGS, FOCAL_POINTS, type ImageTypeId } from '../../lib/imageConfig';
 
 interface ImageUploaderProps {
   value: string;
   onChange: (url: string) => void;
+  imageType?: ImageTypeId;
   accept?: string;
   maxSizeMB?: number;
   recommendedWidth?: number;
@@ -18,23 +20,28 @@ interface ImageUploaderProps {
   altValue?: string;
   onAltChange?: (val: string) => void;
   mediaLibrary?: { url: string; name: string; id: string }[];
+  objectPosition?: string;
+  onObjectPositionChange?: (val: string) => void;
 }
 
 export function ImageUploader({
   value,
   onChange,
-  accept = 'image/jpeg,image/png,image/webp',
-  maxSizeMB = 5,
-  recommendedWidth = 1920,
-  recommendedHeight = 900,
-  minWidth = 800,
-  minHeight = 350,
-  aspectRatio = '16:9',
+  imageType,
+  accept: acceptProp,
+  maxSizeMB: maxSizeMBProp,
+  recommendedWidth: recommendedWidthProp,
+  recommendedHeight: recommendedHeightProp,
+  minWidth: minWidthProp,
+  minHeight: minHeightProp,
+  aspectRatio: aspectRatioProp,
   label,
   showAltInput = false,
   altValue,
   onAltChange,
   mediaLibrary,
+  objectPosition,
+  onObjectPositionChange,
 }: ImageUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -44,6 +51,16 @@ export function ImageUploader({
   const [ratioWarning, setRatioWarning] = useState<string | null>(null);
   const [showMediaLib, setShowMediaLib] = useState(false);
   const generateUploadUrl = useAction(api.upload.generateUploadUrl);
+
+  const cfg = imageType ? IMAGE_CONFIGS[imageType] : null;
+
+  const accept = acceptProp || cfg?.accept || 'image/jpeg,image/png,image/webp';
+  const maxSizeMB = maxSizeMBProp ?? cfg?.maxSizeMB ?? 5;
+  const recommendedWidth = recommendedWidthProp ?? cfg?.recommendedWidth ?? 1920;
+  const recommendedHeight = recommendedHeightProp ?? cfg?.recommendedHeight ?? 900;
+  const minWidth = minWidthProp ?? cfg?.minWidth ?? 800;
+  const minHeight = minHeightProp ?? cfg?.minHeight ?? 350;
+  const aspectRatio = aspectRatioProp ?? cfg?.aspectRatio ?? '16:9';
 
   const validateFile = async (file: File): Promise<boolean> => {
     setError(null);
@@ -137,6 +154,7 @@ export function ImageUploader({
   const handleRemove = () => {
     onChange('');
     if (onAltChange) onAltChange('');
+    if (onObjectPositionChange) onObjectPositionChange('center');
     setDimensionWarning(false);
     setError(null);
   };
@@ -169,6 +187,28 @@ export function ImageUploader({
             </div>
           </div>
           <input ref={fileInputRef} type="file" accept={accept} onChange={handleFileSelect} className="hidden" />
+
+          {onObjectPositionChange && (
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Focal Point</label>
+              <div className="flex flex-wrap gap-1">
+                {FOCAL_POINTS.map((fp) => (
+                  <button
+                    key={fp.value}
+                    type="button"
+                    onClick={() => onObjectPositionChange(fp.value)}
+                    className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest border transition-all ${
+                      objectPosition === fp.value
+                        ? 'bg-accent text-white border-accent'
+                        : 'bg-white text-muted-foreground border-gray-200 hover:border-accent'
+                    }`}
+                  >
+                    {fp.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div>
