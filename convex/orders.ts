@@ -59,12 +59,32 @@ export const getByUser = query({
   },
 });
 
+export const getBySession = query({
+  args: { sessionId: v.string() },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
+      .first();
+    if (!session || session.expiresAt < Date.now()) return [];
+
+    return await ctx.db
+      .query("orders")
+      .withIndex("by_user_id", (q) => q.eq("userId", session.userId))
+      .order("desc")
+      .collect();
+  },
+});
+
 export const create = mutation({
   args: {
-    userId: v.string(),
+    sessionId: v.string(),
+    orderNumber: v.string(),
     customerEmail: v.string(),
     customerName: v.string(),
     items: v.array(cartItemSchema),
+    subtotal: v.number(),
+    shipping: v.number(),
     total: v.number(),
     status: v.string(),
     paymentStatus: v.string(),
@@ -72,9 +92,26 @@ export const create = mutation({
     shippingAddress: addressSchema,
   },
   handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
+      .first();
+    if (!session || session.expiresAt < Date.now()) throw new Error("Not authenticated");
+
     const now = new Date().toISOString();
     return await ctx.db.insert("orders", {
-      ...args,
+      orderNumber: args.orderNumber,
+      userId: session.userId,
+      customerEmail: args.customerEmail,
+      customerName: args.customerName,
+      items: args.items,
+      subtotal: args.subtotal,
+      shipping: args.shipping,
+      total: args.total,
+      status: args.status,
+      paymentStatus: args.paymentStatus,
+      trackingNumber: args.trackingNumber,
+      shippingAddress: args.shippingAddress,
       createdAt: now,
       updatedAt: now,
     });

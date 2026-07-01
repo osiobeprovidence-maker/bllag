@@ -5,7 +5,7 @@ import { CheckCircle2, Package, ArrowRight, Download, Heart } from 'lucide-react
 
 export function PaymentSuccess() {
   const [searchParams] = useSearchParams();
-  const orderId = searchParams.get('orderId') || '#ORD-9281';
+  const orderId = searchParams.get('orderId') || 'Not provided';
 
   return (
     <div className="pt-32 pb-20 px-6 lg:px-12 min-h-screen flex items-center justify-center">

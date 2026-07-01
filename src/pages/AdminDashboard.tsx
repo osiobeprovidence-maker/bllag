@@ -32,7 +32,7 @@ type AdminTab = 'overview' | 'analytics' | 'products' | 'collections' | 'orders'
 
 export function AdminDashboard() {
   const { isAuthenticated, user } = useAuthStore();
-  const { products, orders, collections, loading, addProduct, updateProduct, deleteProduct, updateOrder, addCollection } = useAdmin();
+  const { products, orders, collections, customers, installments, loading, addProduct, updateProduct, deleteProduct, updateOrder, addCollection } = useAdmin();
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -55,7 +55,7 @@ export function AdminDashboard() {
     { name: 'Total Revenue', value: `₦${orders.reduce((acc, o) => acc + o.total, 0).toLocaleString()}`, change: '+20.1%', trend: 'up', icon: DollarSign },
     { name: 'Active Sales', value: orders.filter(o => o.status !== 'delivered').length.toString(), change: '+8.2%', trend: 'up', icon: ShoppingCart },
     { name: 'Inventory Count', value: products.length.toString(), change: '+2', trend: 'up', icon: Package },
-    { name: 'Total Customers', value: '2,300', change: '+12.5%', trend: 'up', icon: Users },
+    { name: 'Total Customers', value: customers.length.toString(), change: '+12.5%', trend: 'up', icon: Users },
   ];
 
   const sidebarLinks = [
@@ -181,7 +181,7 @@ export function AdminDashboard() {
               renderSkeletons()
             ) : (
               <>
-                {activeTab === 'overview' && <OverviewSection stats={stats} />}
+                {activeTab === 'overview' && <OverviewSection stats={stats} orders={orders} />}
                 {activeTab === 'analytics' && <AnalyticsSection orders={orders} />}
                 {activeTab === 'collections' && (
                   <CollectionsSection 
@@ -199,8 +199,8 @@ export function AdminDashboard() {
                   />
                 )}
                 {activeTab === 'orders' && <OrdersSection orders={orders} onUpdate={updateOrder} />}
-                {activeTab === 'customers' && <CustomersSection />}
-                {activeTab === 'installments' && <InstallmentsSection />}
+                {activeTab === 'customers' && <CustomersSection customers={customers} />}
+                {activeTab === 'installments' && <InstallmentsSection installments={installments} />}
                 {activeTab === 'marketing' && <MarketingSection />}
               </>
             )}

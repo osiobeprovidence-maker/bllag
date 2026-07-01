@@ -7,6 +7,8 @@ export function useAdmin() {
   const rawProducts = useQuery(api.products.list);
   const rawCollections = useQuery(api.collections.list);
   const rawOrders = useQuery(api.orders.list);
+  const rawUsers = useQuery(api.users.list);
+  const rawInstallments = useQuery(api.installments.list);
   const addProduct = useMutation(api.products.create);
   const updateProduct = useMutation(api.products.update);
   const deleteProduct = useMutation(api.products.remove);
@@ -33,10 +35,28 @@ export function useAdmin() {
     updatedAt: o.updatedAt || new Date(o._creationTime).toISOString(),
   }));
 
+  const customers = rawUsers === undefined ? undefined
+    : rawUsers.filter((u) => u.role === 'customer').map((u) => ({
+        id: u._id,
+        name: u.name,
+        email: u.email,
+        spent: 0,
+        orders: 0,
+        membership: 'Silver' as const,
+      }));
+
+  const installments = rawInstallments === undefined ? undefined
+    : rawInstallments.map((i) => ({
+        ...i,
+        id: i._id,
+      }));
+
   return {
     products: isAdmin ? products : [],
     collections: isAdmin ? collections : [],
     orders: isAdmin ? orders : [],
+    customers: isAdmin && rawUsers !== undefined ? (customers ?? []) : undefined,
+    installments: isAdmin && rawInstallments !== undefined ? (installments ?? []) : undefined,
     loading: !isAdmin ? false : rawProducts === undefined,
     addProduct: (product: any) => addProduct(product),
     updateProduct: (id: string, product: any) => updateProduct({ id: id as any, ...product }),

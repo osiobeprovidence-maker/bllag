@@ -69,12 +69,7 @@ export function ProductsSection({ products, onEdit, onDelete }: ProductsSectionP
                 </td>
                 <td className="px-8 py-6 font-black text-primary">₦{product.price.toLocaleString()}</td>
                 <td className="px-8 py-6">
-                  <div className="flex flex-col gap-2">
-                    <span className="text-green-600 font-black text-[10px] uppercase tracking-widest">In Stock (45)</span>
-                    <div className="w-32 h-1 bg-gray-100">
-                      <div className="h-full bg-green-500 w-[80%]"></div>
-                    </div>
-                  </div>
+                  <span className="text-green-600 font-black text-[10px] uppercase tracking-widest">Active</span>
                 </td>
                 <td className="px-8 py-6 text-right">
                   <div className="flex justify-end gap-2">

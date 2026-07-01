@@ -105,20 +105,6 @@ export function Shop() {
               </ul>
             </div>
 
-            {/* Mock Price Filter */}
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-wide mb-4 border-b pb-2">Price</h3>
-              <ul className="space-y-3">
-                {['Under ₦3,000', '₦3,000 - ₦5,000', 'Over ₦5,000'].map(price => (
-                  <li key={price}>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input type="checkbox" className="form-checkbox h-4 w-4 text-accent border-muted focus:ring-accent" />
-                      <span className="text-sm text-gray-700">{price}</span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </div>
           </div>
         </div>
 

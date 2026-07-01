@@ -1,7 +1,7 @@
 import { ShoppingBag, ArrowLeft, CheckCircle2, Wallet, CreditCard } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useShopStore, useAuthStore } from '../store';
-import { useMutation, useAction } from 'convex/react';
+import { useMutation, useAction, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
@@ -10,64 +10,48 @@ import { PAYSTACK_PUBLIC_KEY, generateReference } from '../lib/paystack';
 
 export function Checkout() {
   const { cart, cartTotal, clearCart } = useShopStore();
-  const { isAuthenticated, user, updateBalance, updateAddress } = useAuthStore();
+  const { isAuthenticated, sessionId, user, updateBalance } = useAuthStore();
   const createOrder = useMutation(api.orders.create);
+  const saveAddressMutation = useMutation(api.addresses.create);
   const sendEmail = useAction(api.emails.sendOrderConfirmation);
+  const savedAddresses = useQuery(api.addresses.list, sessionId ? { sessionId } : 'skip');
   const [isSuccess, setIsSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet' | 'installment'>('card');
   const [pssFrequency, setPssFrequency] = useState<'weekly' | 'monthly'>('weekly');
   const [pssInstallments, setPssInstallments] = useState(4);
   const [pssStartDate, setPssStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [useSavedAddress, setUseSavedAddress] = useState(!!user?.address);
+  const [useSavedAddress, setUseSavedAddress] = useState(false);
   const [saveAddress, setSaveAddress] = useState(false);
-  const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string, discount: number } | null>(null);
   const navigate = useNavigate();
 
   const [checkoutAddress, setCheckoutAddress] = useState({
     email: user?.email || '',
     firstName: user?.name.split(' ')[0] || '',
     lastName: user?.name.split(' ')[1] || '',
-    street: user?.address?.street || '',
-    city: user?.address?.city || '',
-    state: user?.address?.state || '',
-    zipCode: user?.address?.zipCode || '',
-    country: user?.address?.country || 'Nigeria'
+    street: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'Nigeria'
   });
 
   const subtotal = cartTotal();
   const ref = generateReference();
 
-  let discountRate = 0;
-  let freeShipping = false;
+  const defaultAddress = savedAddresses && savedAddresses.length > 0 ? savedAddresses[0] : null;
 
-  if (isAuthenticated && user?.membership.status === 'active') {
-    if (user.membership.level === 'silver') discountRate = 0.05;
-    if (user.membership.level === 'gold') {
-      discountRate = 0.10;
-      freeShipping = true;
-    }
-    if (user.membership.level === 'platinum') {
-      discountRate = 0.15;
-      freeShipping = true;
-    }
-  }
-
-  const discount = (subtotal * discountRate) + (appliedCoupon?.discount || 0);
-  const shipping = freeShipping ? 0 : (subtotal > 100000 ? 0 : 2500);
-  const total = Math.max(0, subtotal - discount + shipping);
-
-  const handleApplyCoupon = () => {
-    if (couponCode.toUpperCase() === 'WELCOME10') {
-      setAppliedCoupon({ code: 'WELCOME10', discount: 1000 });
-    } else {
-      alert('Invalid coupon code');
-    }
-  };
+  const shipping = subtotal > 100000 ? 0 : 2500;
+  const total = subtotal + shipping;
 
   const completeOrder = async (paymentRef?: string) => {
-    const address = useSavedAddress && user?.address
-      ? user.address
+    const address = useSavedAddress && defaultAddress
+      ? {
+          street: defaultAddress.street,
+          city: defaultAddress.city,
+          state: defaultAddress.state,
+          zipCode: defaultAddress.zipCode,
+          country: defaultAddress.country,
+        }
       : {
           street: checkoutAddress.street,
           city: checkoutAddress.city,
@@ -76,11 +60,11 @@ export function Checkout() {
           country: checkoutAddress.country,
         };
 
-    const now = new Date().toISOString();
-    const orderId = `BLG-${Date.now()}`;
+    const orderNumber = `BLG-${Date.now()}`;
 
     await createOrder({
-      userId: user?.email || 'guest',
+      sessionId: sessionId || '',
+      orderNumber,
       customerEmail: checkoutAddress.email,
       customerName: `${checkoutAddress.firstName} ${checkoutAddress.lastName}`.trim(),
       items: cart.map((item) => ({
@@ -101,8 +85,10 @@ export function Checkout() {
         isBestSeller: item.isBestSeller,
         pssConfig: item.pssConfig,
       })),
+      subtotal,
+      shipping,
       total,
-      status: 'pending',
+      status: 'Pending',
       paymentStatus: 'paid',
       trackingNumber: paymentRef,
       shippingAddress: address,
@@ -111,13 +97,13 @@ export function Checkout() {
     sendEmail({
       email: checkoutAddress.email,
       customerName: `${checkoutAddress.firstName} ${checkoutAddress.lastName}`.trim(),
-      orderId,
+      orderId: orderNumber,
       total,
       items: cart.map((i) => ({ name: i.name, quantity: i.quantity, price: i.price })),
     });
 
-    if (saveAddress && isAuthenticated && !useSavedAddress) {
-      updateAddress(address);
+    if (saveAddress && isAuthenticated && !useSavedAddress && sessionId) {
+      await saveAddressMutation({ sessionId, ...address });
     }
 
     setIsSuccess(true);
@@ -246,7 +232,7 @@ export function Checkout() {
             <div className="bg-muted/30 p-6 border border-muted">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold uppercase tracking-tight">Shipping Details</h2>
-                {user?.address && (
+                {defaultAddress && (
                   <button
                     type="button"
                     onClick={() => setUseSavedAddress(!useSavedAddress)}
@@ -257,15 +243,15 @@ export function Checkout() {
                 )}
               </div>
 
-              {useSavedAddress && user?.address ? (
+              {useSavedAddress && defaultAddress ? (
                 <div className="bg-background p-4 border border-accent/20 relative group">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm font-bold mb-1">{user.name}</p>
-                      <p className="text-xs text-muted-foreground">{user.address.street}</p>
-                      <p className="text-xs text-muted-foreground">{user.address.city}, {user.address.state} {user.address.zipCode}</p>
-                      <p className="text-xs text-muted-foreground">{user.address.country}</p>
-                      <p className="text-xs text-muted-foreground mt-2">{user.email}</p>
+                      <p className="text-sm font-bold mb-1">{user?.name}</p>
+                      <p className="text-xs text-muted-foreground">{defaultAddress.street}</p>
+                      <p className="text-xs text-muted-foreground">{defaultAddress.city}, {defaultAddress.state} {defaultAddress.zipCode}</p>
+                      <p className="text-xs text-muted-foreground">{defaultAddress.country}</p>
+                      <p className="text-xs text-muted-foreground mt-2">{user?.email}</p>
                     </div>
                     <div className="bg-accent text-white px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest">Saved Default</div>
                   </div>
@@ -373,7 +359,7 @@ export function Checkout() {
                 >
                   <Wallet className="h-5 w-5" />
                   <span className="text-[10px] font-bold uppercase tracking-widest">Wallet</span>
-                  {user && <span className="text-[8px] text-accent font-black">₦{user.walletBalance.toLocaleString()}</span>}
+                  {user && <span className="text-[8px] text-accent font-black">₦{(user.walletBalance || 0).toLocaleString()}</span>}
                 </button>
                 <button
                   type="button"
@@ -502,34 +488,11 @@ export function Checkout() {
               ))}
             </div>
 
-            <div className="flex gap-2 mb-8">
-              <input
-                type="text"
-                placeholder="Coupon code"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-                className="flex-1 bg-white border border-gray-300 p-3 text-[10px] font-black uppercase focus:outline-none focus:border-accent"
-              />
-              <button
-                type="button"
-                onClick={handleApplyCoupon}
-                className="px-6 bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-accent transition-colors"
-              >
-                Apply
-              </button>
-            </div>
-
             <div className="space-y-4 text-sm mb-6 border-b border-gray-300 pb-6">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>₦{subtotal.toLocaleString()}</span>
               </div>
-              {discountRate > 0 && (
-                <div className="flex justify-between text-accent font-medium">
-                  <span>Member Discount ({discountRate * 100}%)</span>
-                  <span>-₦{discount.toLocaleString()}</span>
-                </div>
-              )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Shipping</span>
                 <span>{shipping === 0 ? 'Free' : `₦${shipping.toLocaleString()}`}</span>

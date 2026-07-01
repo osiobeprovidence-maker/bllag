@@ -1,20 +1,25 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { User, Package, Settings, LogOut, Shield, Briefcase, MapPin, Phone, Mail, Wallet, Gift, ArrowUpRight, ArrowDownLeft, Crown, Check, Camera, Loader2 } from 'lucide-react';
+import { User, Package, Settings, LogOut, Shield, Briefcase, MapPin, Phone, Mail, Wallet, ArrowUpRight, Crown, Check, Camera, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../store';
 import { useNavigate, Link } from 'react-router-dom';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 
 export function Profile() {
-  const { user, sessionId, logout, updateBalance, updateAddress, updateProfileImage } = useAuthStore();
+  const { user, sessionId, logout, updateProfileImage } = useAuthStore();
   const logoutMutation = useMutation(api.auth.logout);
+  const createAddressMutation = useMutation(api.addresses.create);
+  const removeAddressMutation = useMutation(api.addresses.remove);
   const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'settings' | 'wallet' | 'about' | 'contact' | 'agent' | 'membership' | 'address'>('info');
-  const [giftEmail, setGiftEmail] = useState('');
-  const [giftAmount, setGiftAmount] = useState('');
   
+  const orders = useQuery(api.orders.getBySession, sessionId ? { sessionId } : 'skip');
+  const addresses = useQuery(api.addresses.list, sessionId ? { sessionId } : 'skip');
+  const membership = useQuery(api.memberships.getByUser, sessionId ? { sessionId } : 'skip');
+  const wishlistCount = useQuery(api.wishlist.count, sessionId ? { sessionId } : 'skip');
+
   const [addressForm, setAddressForm] = useState(user?.address || {
     street: '',
     city: '',
@@ -35,10 +40,15 @@ export function Profile() {
     );
   }
 
-  const handleUpdateAddress = (newAddress: any) => {
-    updateAddress(newAddress);
-    alert('Address updated!');
-    setActiveTab('info');
+  const handleSaveAddress = async () => {
+    if (!sessionId) return;
+    await createAddressMutation({ sessionId, ...addressForm });
+    setAddressForm({ street: '', city: '', state: '', zipCode: '', country: 'Nigeria' });
+  };
+
+  const handleRemoveAddress = async (addressId: any) => {
+    if (!sessionId) return;
+    await removeAddressMutation({ sessionId, id: addressId });
   };
 
   const handleLogout = async () => {
@@ -56,30 +66,6 @@ export function Profile() {
       alert('Profile image updated!');
     }
   };
-
-  const handleViewOrder = (orderId: string) => {
-    navigate(`/order/${orderId}`);
-  };
-
-  const copyReferralLink = () => {
-    navigator.clipboard.writeText('https://bllag.xyz/ref/' + user.email);
-    alert('Referral link copied!');
-  };
-
-  const handleGiftSend = () => {
-    if (giftAmount && giftEmail) {
-      updateBalance(-Math.abs(Number(giftAmount)), 'gift', `Gift to ${giftEmail}`);
-      alert(`₦${giftAmount} gift sent to ${giftEmail}`);
-      setGiftAmount('');
-      setGiftEmail('');
-    }
-  };
-
-  const sampleOrders = [
-    { id: 'ORD-001', date: '2024-12-15', status: 'Delivered', total: 450000, items: 2 },
-    { id: 'ORD-002', date: '2024-11-20', status: 'Processing', total: 1250000, items: 1 },
-    { id: 'ORD-003', date: '2024-10-05', status: 'Shipped', total: 780000, items: 3 },
-  ];
 
   return (
     <div className="pt-32 pb-24 min-h-screen bg-background">
@@ -180,23 +166,38 @@ export function Profile() {
             {activeTab === 'orders' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-muted border border-gray-200 p-6 sm:p-8">
                 <h2 className="text-lg font-black uppercase tracking-tight mb-6">Order History</h2>
-                <div className="space-y-4">
-                  {sampleOrders.map((order) => (
-                    <div key={order.id} className="bg-background border border-gray-200 p-4 flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-widest">{order.id}</p>
-                        <p className="text-[10px] text-muted-foreground">{order.date} · {order.items} item(s)</p>
+                {orders === undefined ? (
+                  <div className="text-center py-12">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest">Loading orders...</p>
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div className="text-center py-12 border border-dashed border-gray-200">
+                    <Package className="h-10 w-10 mx-auto text-gray-300 mb-4" />
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">No orders yet.</p>
+                    <Link to="/shop" className="inline-block bg-primary text-primary-foreground px-6 py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-colors">
+                      Start Shopping
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.map((order: any) => (
+                      <div key={order._id} className="bg-background border border-gray-200 p-4 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-widest">{order.orderNumber}</p>
+                          <p className="text-[10px] text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()} · {order.items?.length || 0} item(s)</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold">₦{order.total?.toLocaleString()}</p>
+                          <p className={`text-[10px] font-bold uppercase tracking-widest ${order.status === 'Delivered' ? 'text-green-600' : order.status === 'Shipped' ? 'text-blue-600' : 'text-amber-600'}`}>{order.status}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold">₦{order.total.toLocaleString()}</p>
-                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: order.status === 'Delivered' ? '#16a34a' : order.status === 'Shipped' ? '#2563eb' : '#d97706' }}>{order.status}</p>
-                      </div>
-                    </div>
-                  ))}
-                  <button onClick={() => navigate('/orders')} className="w-full bg-primary text-primary-foreground py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-colors">
-                    View All Orders
-                  </button>
-                </div>
+                    ))}
+                    <button onClick={() => navigate('/orders')} className="w-full bg-primary text-primary-foreground py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-colors">
+                      View All Orders
+                    </button>
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -212,75 +213,70 @@ export function Profile() {
                     <button onClick={() => navigate('/wallet')} className="bg-primary text-primary-foreground py-4 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-colors flex items-center justify-center gap-2">
                       <ArrowUpRight className="w-4 h-4" /> Fund Wallet
                     </button>
-                    <button className="bg-background border border-gray-300 py-4 text-xs font-bold uppercase tracking-widest hover:border-accent transition-colors flex items-center justify-center gap-2">
-                      <ArrowDownLeft className="w-4 h-4" /> Withdraw
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-muted border border-gray-200 p-6 sm:p-8">
-                  <h3 className="text-sm font-black uppercase tracking-tight mb-4">Recent Transactions</h3>
-                  {user.transactions?.length > 0 ? (
-                    <div className="space-y-3">
-                      {user.transactions.slice(0, 5).map((tx) => (
-                        <div key={tx.id} className="flex items-center justify-between bg-background border border-gray-200 p-3">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${tx.type === 'deposit' ? 'bg-green-100' : tx.type === 'gift' ? 'bg-purple-100' : tx.type === 'installment' ? 'bg-blue-100' : 'bg-red-100'}`}>
-                              {tx.type === 'deposit' ? <ArrowUpRight className="w-4 h-4 text-green-600" /> : <ArrowDownLeft className="w-4 h-4 text-red-600" />}
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold uppercase tracking-widest">{tx.description}</p>
-                              <p className="text-[10px] text-muted-foreground">{new Date(tx.date).toLocaleDateString()}</p>
-                            </div>
-                          </div>
-                          <p className={`text-sm font-bold ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-sm">No transactions yet.</p>
-                  )}
-                </div>
-
-                <div className="bg-muted border border-gray-200 p-6 sm:p-8">
-                  <h3 className="text-sm font-black uppercase tracking-tight mb-4">Send a Gift</h3>
-                  <div className="space-y-4">
-                    <input type="email" placeholder="Recipient Email" value={giftEmail} onChange={(e) => setGiftEmail(e.target.value)} className="w-full bg-background border border-gray-300 p-3 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-accent" />
-                    <input type="number" placeholder="Amount (₦)" value={giftAmount} onChange={(e) => setGiftAmount(e.target.value)} className="w-full bg-background border border-gray-300 p-3 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-accent" />
-                    <button onClick={handleGiftSend} className="w-full bg-accent text-white py-3 text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-colors">
-                      <Gift className="w-4 h-4 inline mr-2" /> Send Gift
-                    </button>
                   </div>
                 </div>
               </motion.div>
             )}
 
             {activeTab === 'address' && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-muted border border-gray-200 p-6 sm:p-8">
-                <h2 className="text-lg font-black uppercase tracking-tight mb-6">Saved Address</h2>
-                <div className="space-y-4">
-                  {[
-                    { label: 'Street Address', value: 'street' },
-                    { label: 'City', value: 'city' },
-                    { label: 'State', value: 'state' },
-                    { label: 'Zip Code', value: 'zipCode' },
-                    { label: 'Country', value: 'country' },
-                  ].map((field) => (
-                    <div key={field.value}>
-                      <label className="text-[10px] font-bold uppercase tracking-widest mb-1 block">{field.label}</label>
-                      <input
-                        type="text"
-                        value={(addressForm as any)[field.value]}
-                        onChange={(e) => setAddressForm({ ...addressForm, [field.value]: e.target.value })}
-                        className="w-full bg-background border border-gray-300 p-3 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-accent"
-                      />
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                <div className="bg-muted border border-gray-200 p-6 sm:p-8">
+                  <h2 className="text-lg font-black uppercase tracking-tight mb-6">Saved Addresses</h2>
+                  {addresses === undefined ? (
+                    <div className="text-center py-12">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground uppercase tracking-widest">Loading addresses...</p>
                     </div>
-                  ))}
-                  <button onClick={() => handleUpdateAddress(addressForm)} className="w-full bg-primary text-primary-foreground py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-colors">
-                    Save Address
-                  </button>
+                  ) : addresses.length === 0 ? (
+                    <div className="text-center py-12 border border-dashed border-gray-200">
+                      <MapPin className="h-10 w-10 mx-auto text-gray-300 mb-4" />
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">No saved addresses.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 mb-8">
+                      {addresses.map((addr: any) => (
+                        <div key={addr._id} className="bg-background border border-gray-200 p-4 flex justify-between items-start">
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-widest">{addr.label || 'Address'}</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {addr.street}, {addr.city}, {addr.state} {addr.zipCode}, {addr.country}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveAddress(addr._id)}
+                            className="text-red-500 text-[10px] font-bold uppercase tracking-widest hover:underline shrink-0"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="bg-muted border border-gray-200 p-6 sm:p-8">
+                  <h3 className="text-sm font-black uppercase tracking-tight mb-4">Add New Address</h3>
+                  <div className="space-y-4">
+                    {[
+                      { label: 'Street Address', value: 'street' },
+                      { label: 'City', value: 'city' },
+                      { label: 'State', value: 'state' },
+                      { label: 'Zip Code', value: 'zipCode' },
+                      { label: 'Country', value: 'country' },
+                    ].map((field) => (
+                      <div key={field.value}>
+                        <label className="text-[10px] font-bold uppercase tracking-widest mb-1 block">{field.label}</label>
+                        <input
+                          type="text"
+                          value={(addressForm as any)[field.value]}
+                          onChange={(e) => setAddressForm({ ...addressForm, [field.value]: e.target.value })}
+                          className="w-full bg-background border border-gray-300 p-3 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-accent"
+                        />
+                      </div>
+                    ))}
+                    <button onClick={handleSaveAddress} className="w-full bg-primary text-primary-foreground py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-colors">
+                      Save Address
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -289,13 +285,25 @@ export function Profile() {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
                 <div className="bg-muted border border-gray-200 p-6 sm:p-8">
                   <h2 className="text-lg font-black uppercase tracking-tight mb-6">Membership</h2>
-                  {user.membership?.level && user.membership.level !== 'none' ? (
+                  {membership === undefined ? (
+                    <div className="text-center py-12">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground uppercase tracking-widest">Loading...</p>
+                    </div>
+                  ) : membership ? (
                     <div className="text-center bg-background border border-gray-200 p-6">
                       <Crown className="w-12 h-12 mx-auto mb-4 text-accent" />
-                      <p className="text-2xl font-black uppercase tracking-tight mb-2">{user.membership.level} Member</p>
-                      <p className="text-muted-foreground text-sm mb-4">Status: {user.membership.status}</p>
-                      {user.membership.nextBillingDate && (
-                        <p className="text-xs text-muted-foreground">Next billing: {new Date(user.membership.nextBillingDate).toLocaleDateString()}</p>
+                      <p className="text-2xl font-black uppercase tracking-tight mb-2">{membership.tier} Member</p>
+                      <p className="text-muted-foreground text-sm mb-4">Status: {membership.active ? 'Active' : 'Inactive'}</p>
+                      {membership.expiresAt && (
+                        <p className="text-xs text-muted-foreground">Expires: {new Date(membership.expiresAt).toLocaleDateString()}</p>
+                      )}
+                      {membership.benefits && membership.benefits.length > 0 && (
+                        <div className="mt-4 text-left space-y-1 max-w-xs mx-auto">
+                          {membership.benefits.map((b: string, i: number) => (
+                            <p key={i} className="text-xs flex items-center gap-2"><Check className="w-3 h-3 text-green-600" /> {b}</p>
+                          ))}
+                        </div>
                       )}
                       <button onClick={() => navigate('/membership')} className="mt-6 bg-primary text-primary-foreground px-8 py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent">
                         Manage Membership
@@ -391,7 +399,7 @@ export function Profile() {
                   <h3 className="text-sm font-black uppercase tracking-tight mb-4">Your Referral Link</h3>
                   <div className="bg-background border border-gray-200 p-4 flex items-center justify-between">
                     <code className="text-xs">https://bllag.xyz/ref/{user.email}</code>
-                    <button onClick={copyReferralLink} className="text-accent text-xs font-bold uppercase tracking-widest hover:underline">Copy</button>
+                    <button onClick={() => { navigator.clipboard.writeText('https://bllag.xyz/ref/' + user.email); alert('Referral link copied!'); }} className="text-accent text-xs font-bold uppercase tracking-widest hover:underline">Copy</button>
                   </div>
                 </div>
               </motion.div>

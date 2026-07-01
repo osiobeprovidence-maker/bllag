@@ -1,11 +1,19 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Check, Crown, Star, Zap, ShieldCheck } from 'lucide-react';
+import { Check, Crown, Star, ShieldCheck, Zap, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../store';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 
 export function Membership() {
-  const { isAuthenticated, user, updateBalance, updateMembership } = useAuthStore();
+  const { isAuthenticated, user, sessionId } = useAuthStore();
+  const navigate = useNavigate();
+
+  const membershipData = useQuery(
+    api.memberships.getByUser,
+    isAuthenticated && sessionId ? { sessionId } : 'skip'
+  );
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
@@ -54,16 +62,13 @@ export function Membership() {
   ];
 
   const handleSubscribe = (tier: typeof tiers[0]) => {
-    if (user.walletBalance < tier.price) {
-      alert('Insufficient wallet balance to subscribe.');
-      return;
-    }
-
-    const level = tier.name.toLowerCase() as any;
-    updateBalance(-tier.price, 'payment', `bllag ${tier.name} Membership Subscription`);
-    updateMembership(level);
-    alert(`Welcome to bllag ${tier.name} Membership!`);
+    alert(`You've selected the ${tier.name} plan (₦${tier.price.toLocaleString()}/mo). Proceed to checkout to complete your subscription.`);
+    navigate('/wallet/top-up');
   };
+
+  const currentTier = membershipData && membershipData.active
+    ? membershipData.tier
+    : null;
 
   return (
     <div className="pt-24 pb-24 min-h-screen bg-[#fafafa]">
@@ -84,7 +89,11 @@ export function Membership() {
           </motion.div>
         </div>
 
-        {user.membership.status === 'active' && (
+        {membershipData === undefined ? (
+          <div className="mb-16 flex items-center justify-center p-10">
+            <Loader2 className="h-6 w-6 text-accent animate-spin" />
+          </div>
+        ) : currentTier ? (
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -93,69 +102,74 @@ export function Membership() {
             <div className="absolute top-0 left-0 w-1 h-full bg-accent"></div>
             <Zap className="h-10 w-10 text-accent mx-auto mb-4 group-hover:scale-110 transition-transform" />
             <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1 block">Current Status</span>
-            <h2 className="text-3xl font-black uppercase tracking-tight">Active: {user.membership.level}</h2>
-            <p className="text-muted-foreground text-[10px] uppercase tracking-widest font-bold mt-4">
-              Next billing: {new Date(user.membership.nextBillingDate!).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
-            </p>
+            <h2 className="text-3xl font-black uppercase tracking-tight">Active: {currentTier}</h2>
+            {membershipData.expiresAt && (
+              <p className="text-muted-foreground text-[10px] uppercase tracking-widest font-bold mt-4">
+                Expires: {new Date(membershipData.expiresAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </p>
+            )}
           </motion.div>
-        )}
+        ) : null}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {tiers.map((tier, index) => (
-            <motion.div
-              key={tier.name}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
-              whileHover={{ y: -10 }}
-              className={`relative bg-white p-10 border ${
-                tier.recommended ? 'border-accent shadow-2xl z-10' : 'border-gray-100 shadow-sm'
-              } flex flex-col group transition-all duration-500`}
-            >
-              {tier.recommended && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-white text-[9px] font-black uppercase tracking-[0.2em] px-6 py-2 shadow-lg">
-                  Most Preferred
-                </div>
-              )}
-              
-              <div className="mb-10">
-                <div className={`inline-flex p-4 ${tier.recommended ? 'bg-accent/5' : 'bg-gray-50'} mb-6 group-hover:scale-110 transition-transform duration-500`}>
-                  <tier.icon className={`h-8 w-8 ${tier.color}`} />
-                </div>
-                <h3 className="text-2xl font-black uppercase tracking-tight mb-2">{tier.name}</h3>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black tracking-tighter">₦{tier.price.toLocaleString()}</span>
-                  <span className="text-muted-foreground text-[9px] uppercase tracking-[0.2em] font-black">/ mo</span>
-                </div>
-              </div>
-
-              <div className="space-y-6 mb-12 flex-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-gray-50 pb-2">Plan Benefits</p>
-                <ul className="space-y-4">
-                  {tier.perks.map((perk) => (
-                    <li key={perk} className="flex items-start gap-3 text-[11px] leading-relaxed">
-                      <Check className="h-3.5 w-3.5 text-accent mt-0.5 flex-shrink-0" />
-                      <span className="font-medium">{perk}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <button
-                onClick={() => handleSubscribe(tier)}
-                disabled={user.membership.level === tier.name.toLowerCase()}
-                className={`w-full py-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${
-                  user.membership.level === tier.name.toLowerCase()
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : tier.recommended 
-                      ? 'bg-accent text-white hover:bg-black hover:shadow-xl' 
-                      : 'bg-primary text-primary-foreground hover:bg-accent'
-                }`}
+          {tiers.map((tier, index) => {
+            const isCurrent = currentTier?.toLowerCase() === tier.name.toLowerCase();
+            return (
+              <motion.div
+                key={tier.name}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                whileHover={{ y: -10 }}
+                className={`relative bg-white p-10 border ${
+                  tier.recommended ? 'border-accent shadow-2xl z-10' : 'border-gray-100 shadow-sm'
+                } flex flex-col group transition-all duration-500`}
               >
-                {user.membership.level === tier.name.toLowerCase() ? 'Current Plan' : 'Select Plan'}
-              </button>
-            </motion.div>
-          ))}
+                {tier.recommended && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-white text-[9px] font-black uppercase tracking-[0.2em] px-6 py-2 shadow-lg">
+                    Most Preferred
+                  </div>
+                )}
+                
+                <div className="mb-10">
+                  <div className={`inline-flex p-4 ${tier.recommended ? 'bg-accent/5' : 'bg-gray-50'} mb-6 group-hover:scale-110 transition-transform duration-500`}>
+                    <tier.icon className={`h-8 w-8 ${tier.color}`} />
+                  </div>
+                  <h3 className="text-2xl font-black uppercase tracking-tight mb-2">{tier.name}</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-black tracking-tighter">₦{tier.price.toLocaleString()}</span>
+                    <span className="text-muted-foreground text-[9px] uppercase tracking-[0.2em] font-black">/ mo</span>
+                  </div>
+                </div>
+
+                <div className="space-y-6 mb-12 flex-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-gray-50 pb-2">Plan Benefits</p>
+                  <ul className="space-y-4">
+                    {tier.perks.map((perk) => (
+                      <li key={perk} className="flex items-start gap-3 text-[11px] leading-relaxed">
+                        <Check className="h-3.5 w-3.5 text-accent mt-0.5 flex-shrink-0" />
+                        <span className="font-medium">{perk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <button
+                  onClick={() => handleSubscribe(tier)}
+                  disabled={isCurrent}
+                  className={`w-full py-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${
+                    isCurrent
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : tier.recommended 
+                        ? 'bg-accent text-white hover:bg-black hover:shadow-xl' 
+                        : 'bg-primary text-primary-foreground hover:bg-accent'
+                  }`}
+                >
+                  {isCurrent ? 'Current Plan' : 'Select Plan'}
+                </button>
+              </motion.div>
+            );
+          })}
         </div>
 
         <div className="mt-32 pt-20 border-t border-gray-100 grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">

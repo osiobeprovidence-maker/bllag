@@ -1,10 +1,35 @@
-export function CustomersSection() {
-  const customers = [
-    { id: '1', name: 'Tunde Afolabi', email: 'tunde@example.com', spent: '₦450,000', orders: 12, membership: 'Platinum' },
-    { id: '2', name: 'Chioma Okeke', email: 'chioma@example.com', spent: '₦120,000', orders: 4, membership: 'Gold' },
-    { id: '3', name: 'Abubakar Musa', email: 'musa@example.com', spent: '₦85,000', orders: 2, membership: 'Silver' },
-    { id: '4', name: 'Olumide Bakare', email: 'olu@example.com', spent: '₦1,200,000', orders: 25, membership: 'Platinum' },
-  ];
+import { Users, Loader2 } from 'lucide-react';
+import { EmptyState } from '../ui/EmptyState';
+
+interface CustomersSectionProps {
+  customers: Array<{
+    id: string;
+    name: string;
+    email: string;
+    spent: number;
+    orders: number;
+    membership: string;
+  }>;
+}
+
+export function CustomersSection({ customers }: CustomersSectionProps) {
+  if (customers === undefined) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (customers.length === 0) {
+    return (
+      <EmptyState 
+        icon={Users}
+        title="No Customers Yet"
+        message="Your customer base will appear here once shoppers place their first orders."
+      />
+    );
+  }
 
   return (
     <div className="bg-white border border-gray-200 shadow-sm overflow-hidden">
@@ -47,9 +72,9 @@ export function CustomersSection() {
                 </td>
                 <td className="px-8 py-6">
                   <p className="font-black text-xs">{c.orders} Orders</p>
-                  <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">Last order: 2 days ago</p>
+                  <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">Last order: N/A</p>
                 </td>
-                <td className="px-8 py-6 font-black text-sm">{c.spent}</td>
+                <td className="px-8 py-6 font-black text-sm">{c.spent > 0 ? `₦${c.spent.toLocaleString()}` : 'N/A'}</td>
                 <td className="px-8 py-6 text-right">
                   <button className="text-[10px] font-black uppercase tracking-widest text-accent hover:underline">Full Analytics</button>
                 </td>

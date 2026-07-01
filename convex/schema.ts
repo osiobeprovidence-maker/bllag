@@ -71,6 +71,7 @@ export default defineSchema({
     .index("by_reference", ["reference"]),
 
   orders: defineTable({
+    orderNumber: v.string(),
     userId: v.string(),
     customerEmail: v.string(),
     customerName: v.string(),
@@ -100,6 +101,8 @@ export default defineSchema({
         ),
       })
     ),
+    subtotal: v.number(),
+    shipping: v.number(),
     total: v.number(),
     status: v.string(),
     paymentStatus: v.string(),
@@ -139,4 +142,47 @@ export default defineSchema({
     read: v.boolean(),
     createdAt: v.string(),
   }).index("by_user_id", ["userId"]),
+
+  addresses: defineTable({
+    userId: v.string(),
+    fullName: v.string(),
+    phone: v.string(),
+    country: v.string(),
+    state: v.string(),
+    city: v.string(),
+    street: v.string(),
+    postalCode: v.string(),
+    default: v.boolean(),
+  }).index("by_user_id", ["userId"]),
+
+  memberships: defineTable({
+    userId: v.string(),
+    tier: v.string(),
+    active: v.boolean(),
+    joinedAt: v.string(),
+    expiresAt: v.optional(v.string()),
+    benefits: v.optional(v.array(v.string())),
+  }).index("by_user_id", ["userId"]),
+
+  installments: defineTable({
+    userId: v.string(),
+    customerName: v.string(),
+    customerEmail: v.string(),
+    productName: v.string(),
+    totalAmount: v.number(),
+    paidAmount: v.number(),
+    installmentsCount: v.number(),
+    paidInstallments: v.number(),
+    nextPaymentDate: v.string(),
+    status: v.string(),
+    createdAt: v.string(),
+  }).index("by_user_id", ["userId"])
+    .index("by_status", ["status"]),
+
+  wishlist: defineTable({
+    userId: v.string(),
+    productId: v.id("products"),
+    createdAt: v.string(),
+  }).index("by_user_id", ["userId"])
+    .index("by_product_id", ["productId"]),
 });

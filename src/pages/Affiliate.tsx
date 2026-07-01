@@ -3,14 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useAuthStore } from '../store';
 import { Link } from 'react-router-dom';
-import { Copy, CheckCircle2, TrendingUp, Users, DollarSign } from 'lucide-react';
+import { Copy, CheckCircle2, TrendingUp, Users, DollarSign, BarChart3 } from 'lucide-react';
 
 export function Affiliate() {
   const { isAuthenticated, user } = useAuthStore();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
 
-  // If not authenticated, prompt to login
   if (!isAuthenticated) {
     return (
       <div className="pt-32 pb-24 min-h-screen flex flex-col items-center justify-center max-w-3xl mx-auto px-4 text-center">
@@ -26,7 +25,6 @@ export function Affiliate() {
     );
   }
 
-  // If authenticated but not an agent, show landing page to join
   if (user?.role !== 'agent') {
     return (
       <div className="pt-32 pb-24 min-h-screen max-w-4xl mx-auto px-4 text-center">
@@ -73,7 +71,6 @@ export function Affiliate() {
     );
   }
 
-  // Agent Dashboard
   const affiliateLink = `https://bllag.com/?ref=${user?.name.toLowerCase().replace(/\s+/g, '') || 'user'}`;
 
   const handleCopy = () => {
@@ -96,24 +93,21 @@ export function Affiliate() {
               <h3 className="text-sm font-bold uppercase tracking-widest">Total Earnings</h3>
               <DollarSign className="h-5 w-5 text-accent" />
             </div>
-            <p className="text-3xl font-black">₦45,000</p>
-            <p className="text-xs text-muted-foreground mt-2">+12% from last month</p>
+            <p className="text-3xl font-black">Coming Soon</p>
           </div>
           <div className="bg-muted p-6 border border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold uppercase tracking-widest">Total Clicks</h3>
               <TrendingUp className="h-5 w-5 text-accent" />
             </div>
-            <p className="text-3xl font-black">1,204</p>
-            <p className="text-xs text-muted-foreground mt-2">+5% from last month</p>
+            <p className="text-3xl font-black">Coming Soon</p>
           </div>
           <div className="bg-muted p-6 border border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold uppercase tracking-widest">Conversions</h3>
-              <Users className="h-5 w-5 text-accent" />
+              <BarChart3 className="h-5 w-5 text-accent" />
             </div>
-            <p className="text-3xl font-black">34</p>
-            <p className="text-xs text-muted-foreground mt-2">2.8% conversion rate</p>
+            <p className="text-3xl font-black">Coming Soon</p>
           </div>
         </div>
 
@@ -148,35 +142,10 @@ export function Affiliate() {
 
         <div className="bg-muted p-8 border border-gray-200">
           <h2 className="text-xl font-bold uppercase tracking-tight mb-6">Recent Referrals</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-muted-foreground uppercase tracking-widest text-xs border-b border-gray-300">
-                <tr>
-                  <th className="pb-4 font-normal">Date</th>
-                  <th className="pb-4 font-normal">Order Value</th>
-                  <th className="pb-4 font-normal">Commission</th>
-                  <th className="pb-4 font-normal text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-300">
-                {[
-                  { date: 'Oct 24, 2023', value: '₦12,500', comm: '₦1,875', status: 'Paid' },
-                  { date: 'Oct 22, 2023', value: '₦8,000', comm: '₦1,200', status: 'Pending' },
-                  { date: 'Oct 18, 2023', value: '₦24,000', comm: '₦3,600', status: 'Paid' },
-                ].map((ref, i) => (
-                  <tr key={i}>
-                    <td className="py-4">{ref.date}</td>
-                    <td className="py-4">{ref.value}</td>
-                    <td className="py-4 font-medium text-accent">{ref.comm}</td>
-                    <td className="py-4 text-right">
-                      <span className={`px-2 py-1 text-xs uppercase tracking-widest ${ref.status === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                        {ref.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="text-center py-16 border border-dashed border-gray-200">
+            <BarChart3 className="h-10 w-10 mx-auto text-gray-300 mb-4" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">No affiliate data yet</p>
+            <p className="text-[9px] text-muted-foreground mt-2">Your referred orders will appear here once customers start purchasing through your link.</p>
           </div>
         </div>
       </div>

@@ -1,35 +1,20 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { MapPin, Plus, Edit2, Trash2, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { MapPin, Plus, Edit2, Trash2, CheckCircle2, ArrowLeft, Loader2 } from 'lucide-react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { useAuthStore } from '../store';
 
 export function AddressBook() {
-  const { user } = useAuthStore();
-  
-  // Mock addresses - in real app fetch from Firestore
-  const addresses = [
-    {
-      id: '1',
-      label: 'Default Shipping',
-      street: '12 Luxury Way, Penthouse B',
-      city: 'Victoria Island',
-      state: 'Lagos',
-      zip: '101241',
-      country: 'Nigeria',
-      isDefault: true
-    },
-    {
-      id: '2',
-      label: 'Office HQ',
-      street: 'Plot 45, Industrial Estate',
-      city: 'Ikeja',
-      state: 'Lagos',
-      zip: '100271',
-      country: 'Nigeria',
-      isDefault: false
-    }
-  ];
+  const { user, sessionId } = useAuthStore();
+  const addresses = useQuery(api.addresses.list, sessionId ? { sessionId } : 'skip');
+  const removeAddress = useMutation(api.addresses.remove);
+
+  const handleRemove = async (id: any) => {
+    if (!sessionId) return;
+    await removeAddress({ sessionId, id });
+  };
 
   return (
     <div className="pt-32 pb-20 px-6 lg:px-12">
@@ -56,52 +41,63 @@ export function AddressBook() {
           </Link>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {addresses.map((address) => (
-            <motion.div 
-              key={address.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`border p-8 relative group transition-all ${address.isDefault ? 'border-accent bg-accent/5' : 'border-gray-200 bg-white hover:border-accent/50'}`}
+        {addresses === undefined ? (
+          <div className="text-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground uppercase tracking-widest">Loading addresses...</p>
+          </div>
+        ) : addresses.length === 0 ? (
+          <div className="text-center py-20 border border-dashed border-gray-200">
+            <MapPin className="h-16 w-16 mx-auto mb-6 text-gray-300" />
+            <h3 className="text-xl font-black uppercase tracking-tight mb-4">No Addresses Saved</h3>
+            <p className="text-muted-foreground text-sm mb-8">Add your first shipping address to get started.</p>
+            <Link 
+              to="/address-book/add"
+              className="inline-flex items-center gap-3 bg-primary text-white px-8 py-5 text-[10px] font-black uppercase tracking-widest hover:bg-accent transition-all"
             >
-              <div className="flex justify-between items-start mb-6">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 flex items-center justify-center rounded-full ${address.isDefault ? 'bg-accent text-white' : 'bg-gray-100 text-muted-foreground'}`}>
-                    <MapPin className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
+              Add Address
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {addresses.map((address: any, idx: number) => (
+              <motion.div 
+                key={address._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                className="border border-gray-200 bg-white p-8 relative group hover:border-accent/50 transition-all"
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-tight">{address.label || 'Address'}</h3>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xs font-black uppercase tracking-tight">{address.label}</h3>
-                    {address.isDefault && (
-                      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-accent">Primary Destination</span>
-                    )}
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Link to={`/address-book/edit/${address._id}`} className="p-2 hover:text-accent transition-colors">
+                      <Edit2 className="h-4 w-4" />
+                    </Link>
+                    <button onClick={() => handleRemove(address._id)} className="p-2 hover:text-red-500 transition-colors">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Link to={`/address-book/edit/${address.id}`} className="p-2 hover:text-accent transition-colors">
-                    <Edit2 className="h-4 w-4" />
-                  </Link>
-                  <button className="p-2 hover:text-red-500 transition-colors">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-loose mb-8">
+                  <p>{user?.name}</p>
+                  <p>{address.street}</p>
+                  <p>{address.city}, {address.state} {address.zipCode}</p>
+                  <p>{address.country}</p>
                 </div>
-              </div>
-
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-loose mb-8">
-                <p>{user?.name}</p>
-                <p>{address.street}</p>
-                <p>{address.city}, {address.state} {address.zip}</p>
-                <p>{address.country}</p>
-              </div>
-
-              {!address.isDefault && (
-                <button className="text-[9px] font-black uppercase tracking-widest text-accent hover:underline flex items-center gap-2">
-                  Set as Primary Destination
-                  <ArrowLeft className="h-3 w-3 rotate-180" />
-                </button>
-              )}
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

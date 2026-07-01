@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Wallet as WalletIcon, Gift, Plus, Send, Clock, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Wallet as WalletIcon, Gift, Plus, Send, Clock, ArrowUpRight, ArrowDownLeft, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../store';
 import { Navigate, Link } from 'react-router-dom';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 
 export function Wallet() {
-  const { isAuthenticated, user, updateBalance } = useAuthStore();
+  const { isAuthenticated, user, sessionId, updateBalance } = useAuthStore();
   const [giftEmail, setGiftEmail] = useState('');
   const [giftAmount, setGiftAmount] = useState('');
+
+  const transactions = useQuery(
+    api.payments.getTransactions,
+    isAuthenticated && sessionId ? { sessionId } : 'skip'
+  );
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
@@ -90,33 +97,8 @@ export function Wallet() {
                   <Clock className="h-6 w-6 text-accent" />
                   <h3 className="text-lg font-black uppercase tracking-tight">Pay Small Small</h3>
                 </div>
-                <div className="space-y-4">
-                  {user.installments.length > 0 ? (
-                    user.installments.map((plan) => (
-                      <div key={plan.id} className="bg-background p-4 border border-gray-100">
-                        <p className="text-xs font-black uppercase mb-1 line-clamp-1">{plan.productName}</p>
-                        <div className="flex justify-between items-end">
-                          <div>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Next Payment: {new Date(plan.nextPaymentDate).toLocaleDateString()}</p>
-                            <p className="text-sm font-bold">₦{(plan.totalAmount / plan.installmentsCount).toLocaleString()}</p>
-                          </div>
-                          <span className="text-[8px] font-black bg-accent text-white px-2 py-1 uppercase tracking-widest">
-                            {plan.paidInstallments} of {plan.installmentsCount}
-                          </span>
-                        </div>
-                        <div className="mt-3 w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
-                          <div
-                            className="bg-accent h-full transition-all duration-500"
-                            style={{ width: `${(plan.paidInstallments / plan.installmentsCount) * 100}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 border border-dashed border-gray-300">
-                      <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">No active plans</p>
-                    </div>
-                  )}
+                <div className="text-center py-8 border border-dashed border-gray-300">
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">No active plans</p>
                 </div>
               </div>
             </div>
@@ -127,17 +109,21 @@ export function Wallet() {
                 <h3 className="text-lg font-black uppercase tracking-tight">Transaction History</h3>
                 <button className="text-[10px] font-bold uppercase tracking-widest text-accent hover:underline">Download Statement</button>
               </div>
-              {user.transactions.length > 0 ? (
+              {transactions === undefined ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="h-8 w-8 text-accent animate-spin" />
+                </div>
+              ) : transactions.length > 0 ? (
                 <div className="space-y-2">
-                  {user.transactions.map((tx) => (
-                    <div key={tx.id} className="bg-background p-4 border border-gray-100 flex items-center justify-between hover:border-accent/30 transition-colors">
+                  {transactions.map((tx) => (
+                    <div key={tx._id} className="bg-background p-4 border border-gray-100 flex items-center justify-between hover:border-accent/30 transition-colors">
                       <div className="flex items-center gap-4">
                         <div className={`p-3 rounded-full ${tx.amount > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                           {tx.amount > 0 ? <ArrowDownLeft className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
                         </div>
                         <div>
-                          <p className="font-bold text-sm uppercase tracking-tight">{tx.description}</p>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{new Date(tx.date).toLocaleDateString()} • {new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                          <p className="font-bold text-sm uppercase tracking-tight">{tx.description || tx.type}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{new Date(tx.createdAt).toLocaleDateString()} • {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
                       </div>
                       <div className="text-right">

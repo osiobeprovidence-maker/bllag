@@ -1,12 +1,16 @@
 import { useState } from 'react';
-import { ArrowUpRight, ArrowDownRight, Filter, Download, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Filter, Download, ChevronRight, Activity } from 'lucide-react';
+import { Order } from '../../store';
+import { EmptyState } from '../ui/EmptyState';
 
 interface OverviewSectionProps {
   stats: any[];
+  orders: Order[];
 }
 
-export function OverviewSection({ stats }: OverviewSectionProps) {
+export function OverviewSection({ stats, orders }: OverviewSectionProps) {
   const [isActivityOpen, setIsActivityOpen] = useState(false);
+  const recentOrders = orders.slice(0, 5);
 
   return (
     <div className="space-y-12">
@@ -45,52 +49,59 @@ export function OverviewSection({ stats }: OverviewSectionProps) {
         <div className={`grid grid-cols-1 lg:grid-cols-3 gap-8 ${isActivityOpen ? 'block' : 'hidden lg:grid'}`}>
           <div className="lg:col-span-2 bg-white border border-gray-100 shadow-sm p-8">
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-xl font-black uppercase tracking-tight">Recent Activity</h2>
+              <h2 className="text-xl font-black uppercase tracking-tight">Recent Orders</h2>
               <div className="flex gap-2">
                 <button className="p-2 bg-gray-50 hover:bg-gray-100 transition-colors"><Filter className="h-4 w-4" /></button>
                 <button className="p-2 bg-gray-50 hover:bg-gray-100 transition-colors"><Download className="h-4 w-4" /></button>
               </div>
             </div>
-            <div className="space-y-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-gray-50/50 hover:bg-gray-50 transition-colors border-l-2 border-transparent hover:border-accent">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-white border border-gray-100 flex items-center justify-center font-black text-xs text-accent">#ORD</div>
-                    <div>
-                      <p className="text-sm font-black uppercase">Order #BL-89{i}42</p>
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Tunde Afolabi • Lagos, NG</p>
+            {recentOrders.length === 0 ? (
+              <EmptyState
+                icon={Activity}
+                title="No Recent Orders"
+                message="Customer orders will appear here as they are placed."
+              />
+            ) : (
+              <div className="space-y-6">
+                {recentOrders.map((order) => (
+                  <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50/50 hover:bg-gray-50 transition-colors border-l-2 border-transparent hover:border-accent">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-white border border-gray-100 flex items-center justify-center font-black text-xs text-accent">#ORD</div>
+                      <div>
+                        <p className="text-sm font-black uppercase">Order #{order.id.slice(0, 8)}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{order.customerName} • {order.shippingAddress?.city || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-black">₦{order.total.toLocaleString()}</p>
+                      <p className="text-[10px] text-green-600 font-black uppercase tracking-widest">{order.paymentStatus === 'paid' ? 'Paid' : order.paymentStatus}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-black">₦145,000</p>
-                    <p className="text-[10px] text-green-600 font-black uppercase tracking-widest">Paid via Wallet</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="bg-white border border-gray-100 shadow-sm p-8">
             <h2 className="text-xl font-black uppercase tracking-tight mb-8">Live Feed</h2>
             <div className="space-y-6 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-gray-100">
-              {[
-                { type: 'sale', text: 'New sale recorded: Gold Chain', time: '2m ago' },
-                { type: 'user', text: 'New customer registration: Musa', time: '15m ago' },
-                { type: 'alert', text: 'Stock low: Silver Bracelet (5 left)', time: '45m ago' },
-                { type: 'payment', text: 'Installment paid by Chioma', time: '1h ago' },
-              ].map((event, i) => (
-                <div key={i} className="flex gap-4 relative z-10">
-                  <div className={`w-6 h-6 rounded-full border-4 border-white flex items-center justify-center shadow-sm ${
-                    event.type === 'sale' ? 'bg-green-500' : 
-                    event.type === 'user' ? 'bg-blue-500' : 
-                    event.type === 'alert' ? 'bg-red-500' : 'bg-accent'
-                  }`}></div>
-                  <div>
-                    <p className="text-xs font-bold leading-tight">{event.text}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black mt-1">{event.time}</p>
+              {orders.length === 0 ? (
+                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest text-center py-12">No recent activity</p>
+              ) : (
+                orders.slice(0, 4).map((order, i) => (
+                  <div key={order.id} className="flex gap-4 relative z-10">
+                    <div className={`w-6 h-6 rounded-full border-4 border-white flex items-center justify-center shadow-sm ${
+                      order.status === 'delivered' ? 'bg-green-500' : 
+                      order.status === 'shipped' ? 'bg-blue-500' : 
+                      order.status === 'cancelled' ? 'bg-red-500' : 'bg-accent'
+                    }`}></div>
+                    <div>
+                      <p className="text-xs font-bold leading-tight">Order {order.status}: {order.items.map(i => i.name).join(', ').slice(0, 40)}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
             <button className="w-full mt-8 py-3 text-[10px] font-black uppercase tracking-widest border border-gray-200 hover:bg-gray-50 transition-colors">
               View System Logs

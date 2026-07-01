@@ -65,6 +65,13 @@ export const updateBalance = mutation({
   },
 });
 
+export const list = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("users").collect();
+  },
+});
+
 export const resetAllWallets = mutation({
   args: {},
   handler: async (ctx) => {
