@@ -7,6 +7,7 @@ export type ImageTypeId =
   | 'category'
   | 'campaign'
   | 'flashSale'
+  | 'instagram'
   | 'membership'
   | 'profileAvatar'
   | 'mediaLibrary';
@@ -142,6 +143,19 @@ export const IMAGE_CONFIGS: Record<ImageTypeId, ImageTypeConfig> = {
     accept: 'image/jpeg,image/png,image/webp',
     description: '960×300 min · 1920×600 recommended · 16:5',
     expectedRatio: 16 / 5,
+  },
+  instagram: {
+    id: 'instagram',
+    label: 'Instagram Post',
+    recommendedWidth: 1080,
+    recommendedHeight: 1080,
+    aspectRatio: '1:1',
+    minWidth: 320,
+    minHeight: 320,
+    maxSizeMB: 5,
+    accept: 'image/jpeg,image/png,image/webp',
+    description: '320×320 min · 1080×1080 recommended · 1:1',
+    expectedRatio: 1,
   },
   profileAvatar: {
     id: 'profileAvatar',

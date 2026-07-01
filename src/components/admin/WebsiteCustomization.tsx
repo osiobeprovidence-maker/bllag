@@ -252,8 +252,8 @@ function InstagramFeedTab({ posts, settings, createPost, updatePost, removePost,
                 <ImageUploader
                   value={form.image}
                   onChange={(url) => setForm({ ...form, image: url })}
-                  label="Post Image"
-                  imageType="product"
+                  label="Post Image (1080×1080)"
+                  imageType="instagram"
                   showAltInput
                   altValue={form.altText}
                   onAltChange={(val) => setForm({ ...form, altText: val })}
@@ -392,38 +392,37 @@ function InstagramFeedTab({ posts, settings, createPost, updatePost, removePost,
 
   return (
     <div className="space-y-8">
-      <div className="bg-white border border-gray-200 shadow-sm overflow-x-auto">
-        <div className="flex items-center justify-between">
-          <div className="flex">
-            {cmsTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveCmsTab(tab.id)}
-                className={`px-6 py-4 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${
-                  activeCmsTab === tab.id
-                    ? 'bg-primary text-white shadow-lg'
-                    : 'text-muted-foreground hover:bg-gray-50 hover:text-primary'
-                }`}
-              >
-                {tab.name}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-1 px-4 border-l border-gray-100">
-            {(['desktop', 'tablet', 'mobile'] as PreviewDevice[]).map((d) => (
-              <button
-                key={d}
-                onClick={() => setPreviewDevice(d)}
-                className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest border transition-all ${
-                  previewDevice === d
-                    ? 'bg-accent text-white border-accent'
-                    : 'bg-white text-muted-foreground border-gray-200 hover:border-accent'
-                }`}
-              >
-                {d === 'desktop' ? 'Desktop' : d === 'tablet' ? 'Tablet' : 'Mobile'}
-              </button>
-            ))}
-          </div>
+      <div className="bg-white border border-gray-200 shadow-sm">
+        <div className="flex flex-wrap gap-1 p-2 overflow-x-auto">
+          {cmsTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveCmsTab(tab.id)}
+              className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all shrink-0 ${
+                activeCmsTab === tab.id
+                  ? 'bg-primary text-white shadow-lg'
+                  : 'text-muted-foreground hover:bg-gray-50 hover:text-primary'
+              }`}
+            >
+              {tab.name}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center justify-center gap-1.5 px-4 py-2 border-t border-gray-100 bg-gray-50/50">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mr-1">Preview:</span>
+          {(['desktop', 'tablet', 'mobile'] as PreviewDevice[]).map((d) => (
+            <button
+              key={d}
+              onClick={() => setPreviewDevice(d)}
+              className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest border transition-all ${
+                previewDevice === d
+                  ? 'bg-accent text-white border-accent'
+                  : 'bg-white text-muted-foreground border-gray-200 hover:border-accent'
+              }`}
+            >
+              {d === 'desktop' ? 'Desktop' : d === 'tablet' ? 'Tablet' : 'Mobile'}
+            </button>
+          ))}
         </div>
       </div>
 
