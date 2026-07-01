@@ -20,7 +20,7 @@ export function CollectionsSection({ collections, onAdd, onUpdate, onDelete }: C
   };
 
   return (
-    <div className="p-6">
+    <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-black uppercase tracking-tight">Collections</h3>
         <button
@@ -67,7 +67,7 @@ export function CollectionsSection({ collections, onAdd, onUpdate, onDelete }: C
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {collections.map((coll) => (
-          <div key={coll.id} className="bg-white border border-gray-200 overflow-hidden group">
+          <div key={coll.id} className="bg-white border border-gray-200 shadow-sm overflow-hidden group">
             <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
               {coll.image && (
                 <img src={coll.image} alt={coll.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />

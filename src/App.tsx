@@ -62,6 +62,11 @@ function ScrollToTop() {
   return null;
 }
 
+function useIsAdminRoute() {
+  const location = useLocation();
+  return location.pathname.startsWith('/admin');
+}
+
 function AuthSync({ children }: { children: React.ReactNode }) {
   const sessionId = useAuthStore((s) => s.sessionId);
   const setSessionId = useAuthStore((s) => s.setSessionId);
@@ -87,6 +92,22 @@ function AuthSync({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AdminLayoutWrapper({ children }: { children: React.ReactNode }) {
+  const isAdmin = useIsAdminRoute();
+
+  if (isAdmin) {
+    return <>{children}</>;
+  }
+
+  return (
+    <>
+      <Navbar />
+      <main className="flex-grow">{children}</main>
+      <Footer />
+    </>
+  );
+}
+
 export default function App() {
   return (
     <HelmetProvider>
@@ -99,8 +120,7 @@ export default function App() {
           </Helmet>
           <div className="flex flex-col min-h-screen">
             <AuthSync>
-              <Navbar />
-              <main className="flex-grow">
+              <AdminLayoutWrapper>
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/shop" element={<Shop />} />
@@ -148,8 +168,7 @@ export default function App() {
                   <Route path="/error" element={<ServerError />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </main>
-              <Footer />
+              </AdminLayoutWrapper>
             </AuthSync>
           </div>
         </Router>

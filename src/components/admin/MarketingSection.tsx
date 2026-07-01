@@ -5,7 +5,7 @@ export function MarketingSection() {
   return (
     <div className="space-y-12">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white border border-gray-200 p-8">
+        <div className="bg-white border border-gray-200 shadow-sm p-8">
           <div className="flex justify-between items-center mb-8">
             <h3 className="text-xl font-black uppercase tracking-tight">Active Promotions</h3>
             <button className="text-accent hover:underline text-[10px] font-black uppercase tracking-widest">Create New</button>
@@ -39,21 +39,21 @@ export function MarketingSection() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="bg-white border border-gray-200 p-8 flex flex-col items-center text-center group cursor-pointer hover:border-accent transition-all">
+        <div className="bg-white border border-gray-200 shadow-sm p-8 flex flex-col items-center text-center group cursor-pointer hover:border-accent transition-all">
           <div className="p-4 bg-gray-50 mb-4 group-hover:bg-accent group-hover:text-white transition-colors">
             <Tag className="h-6 w-6" />
           </div>
           <h4 className="font-black text-sm uppercase mb-2">Coupon Management</h4>
           <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Create and track promo codes</p>
         </div>
-        <div className="bg-white border border-gray-200 p-8 flex flex-col items-center text-center group cursor-pointer hover:border-accent transition-all">
+        <div className="bg-white border border-gray-200 shadow-sm p-8 flex flex-col items-center text-center group cursor-pointer hover:border-accent transition-all">
           <div className="p-4 bg-gray-50 mb-4 group-hover:bg-accent group-hover:text-white transition-colors">
             <Megaphone className="h-6 w-6" />
           </div>
           <h4 className="font-black text-sm uppercase mb-2">Ad Placement</h4>
           <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Manage store banners and popups</p>
         </div>
-        <div className="bg-white border border-gray-200 p-8 flex flex-col items-center text-center group cursor-pointer hover:border-accent transition-all">
+        <div className="bg-white border border-gray-200 shadow-sm p-8 flex flex-col items-center text-center group cursor-pointer hover:border-accent transition-all">
           <div className="p-4 bg-gray-50 mb-4 group-hover:bg-accent group-hover:text-white transition-colors">
             <Users className="h-6 w-6" />
           </div>

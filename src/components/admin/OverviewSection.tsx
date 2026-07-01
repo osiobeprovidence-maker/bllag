@@ -16,7 +16,7 @@ export function OverviewSection({ stats, orders }: OverviewSectionProps) {
     <div className="space-y-12">
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
-          <div key={stat.name} className="bg-white p-8 border border-gray-100 shadow-sm relative overflow-hidden group">
+          <div key={stat.name} className="bg-white p-8 border border-gray-200 shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-gray-50 rounded-bl-full -mr-8 -mt-8 transition-all group-hover:bg-accent/5"></div>
             <div className="flex justify-between items-start mb-6 relative z-10">
               <div className="p-3 bg-gray-50 text-primary group-hover:bg-accent group-hover:text-white transition-colors">
@@ -47,7 +47,7 @@ export function OverviewSection({ stats, orders }: OverviewSectionProps) {
         </button>
 
         <div className={`grid grid-cols-1 lg:grid-cols-3 gap-8 ${isActivityOpen ? 'block' : 'hidden lg:grid'}`}>
-          <div className="lg:col-span-2 bg-white border border-gray-100 shadow-sm p-8">
+          <div className="lg:col-span-2 bg-white border border-gray-200 shadow-sm p-8">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-xl font-black uppercase tracking-tight">Recent Orders</h2>
               <div className="flex gap-2">
@@ -82,7 +82,7 @@ export function OverviewSection({ stats, orders }: OverviewSectionProps) {
             )}
           </div>
 
-          <div className="bg-white border border-gray-100 shadow-sm p-8">
+          <div className="bg-white border border-gray-200 shadow-sm p-8">
             <h2 className="text-xl font-black uppercase tracking-tight mb-8">Live Feed</h2>
             <div className="space-y-6 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-gray-100">
               {orders.length === 0 ? (
