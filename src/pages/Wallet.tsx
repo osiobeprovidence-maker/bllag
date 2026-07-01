@@ -20,6 +20,21 @@ export function Wallet() {
     return <Navigate to="/login" replace />;
   }
 
+  const handleDownloadStatement = () => {
+    if (!transactions || transactions.length === 0) return;
+    const headers = 'Date,Type,Amount,Reference,Status,Description\n';
+    const rows = transactions.map((t: any) =>
+      `${new Date(t.createdAt).toLocaleDateString()},${t.type},${t.amount},${t.reference},${t.status},"${t.description || ''}"`
+    ).join('\n');
+    const blob = new Blob([headers + rows], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bllag-wallet-statement-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleGift = (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(giftAmount);
@@ -107,7 +122,7 @@ export function Wallet() {
             <div className="bg-muted p-8 border border-gray-200">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-lg font-black uppercase tracking-tight">Transaction History</h3>
-                <button className="text-[10px] font-bold uppercase tracking-widest text-accent hover:underline">Download Statement</button>
+                <button onClick={handleDownloadStatement} className="text-[10px] font-bold uppercase tracking-widest text-accent hover:underline">Download Statement</button>
               </div>
               {transactions === undefined ? (
                 <div className="flex items-center justify-center py-16">

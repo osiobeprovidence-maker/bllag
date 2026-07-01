@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Instagram, Facebook, Twitter, ArrowRight } from 'lucide-react';
 
 export function Footer() {
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
   return (
     <footer className="bg-primary text-primary-foreground pt-20 pb-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,9 +15,9 @@ export function Footer() {
               Trendy jewelry that doesn't break the bank. Upgrade your look with our daily drops.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="hover:text-accent transition-colors"><Instagram className="h-5 w-5" /></a>
-              <a href="#" className="hover:text-accent transition-colors"><Facebook className="h-5 w-5" /></a>
-              <a href="#" className="hover:text-accent transition-colors"><Twitter className="h-5 w-5" /></a>
+              <a href="https://instagram.com/bllag" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors"><Instagram className="h-5 w-5" /></a>
+              <a href="https://facebook.com/bllag" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors"><Facebook className="h-5 w-5" /></a>
+              <a href="https://twitter.com/bllag" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors"><Twitter className="h-5 w-5" /></a>
             </div>
           </div>
 
@@ -33,8 +36,8 @@ export function Footer() {
             <h3 className="font-bold uppercase text-lg mb-6 tracking-wide">Customer Care</h3>
             <ul className="space-y-4 text-sm text-gray-400">
               <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
-              <li><Link to="/shipping" className="hover:text-white transition-colors">Shipping & Returns</Link></li>
-              <li><Link to="/jewelry-care" className="hover:text-white transition-colors">Jewelry Care</Link></li>
+              <li><Link to="/returns" className="hover:text-white transition-colors">Shipping & Returns</Link></li>
+              <li><Link to="/help-center" className="hover:text-white transition-colors">Jewelry Care</Link></li>
               <li><Link to="/faq" className="hover:text-white transition-colors">FAQ</Link></li>
               <li><Link to="/size-guide" className="hover:text-white transition-colors">Size Guide</Link></li>
             </ul>
@@ -45,16 +48,26 @@ export function Footer() {
             <p className="text-sm text-gray-400 mb-4">
               Sign up for updates on new collections and exclusive offers.
             </p>
-            <form className="flex" onSubmit={(e) => e.preventDefault()}>
+            <form className="flex" onSubmit={(e) => {
+              e.preventDefault();
+              if (newsletterEmail) {
+                setNewsletterSubmitted(true);
+                setNewsletterEmail('');
+              }
+            }}>
               <input
                 type="email"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
                 placeholder="Email Address"
                 className="bg-transparent border-b border-gray-600 px-0 py-2 text-sm w-full focus:outline-none focus:border-accent text-white"
+                required
               />
               <button type="submit" className="border-b border-gray-600 px-2 py-2 hover:border-accent hover:text-accent transition-colors">
                 <ArrowRight className="h-4 w-4" />
               </button>
             </form>
+            {newsletterSubmitted && <p className="text-green-400 text-xs mt-2">Thanks for subscribing!</p>}
           </div>
         </div>
 

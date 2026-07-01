@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Search, Edit2, Trash2, Package } from 'lucide-react';
 import { Product } from '../../store';
 import { EmptyState } from '../ui/EmptyState';
@@ -6,9 +7,16 @@ interface ProductsSectionProps {
   products: Product[];
   onEdit: (product: Product) => void;
   onDelete: (id: string) => void;
+  onAdd?: () => void;
 }
 
-export function ProductsSection({ products, onEdit, onDelete }: ProductsSectionProps) {
+export function ProductsSection({ products, onEdit, onDelete, onAdd }: ProductsSectionProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const filtered = products.filter(p =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   if (products.length === 0) {
     return (
       <EmptyState 
@@ -17,7 +25,7 @@ export function ProductsSection({ products, onEdit, onDelete }: ProductsSectionP
         message="Your digital vault is currently empty. Start by adding your first luxury masterpiece."
         action={{
           label: "Add New Piece",
-          onClick: () => {} // This would be handled by parent modal state
+          onClick: () => onAdd?.()
         }}
       />
     );
@@ -28,7 +36,7 @@ export function ProductsSection({ products, onEdit, onDelete }: ProductsSectionP
       <div className="p-8 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div>
           <h2 className="text-xl font-black uppercase tracking-tight">Active Collections</h2>
-          <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-1">Showing all {products.length} inventory items</p>
+          <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-1">Showing {searchQuery ? filtered.length + ' of ' : 'all '}{products.length} inventory items</p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-initial">
@@ -36,6 +44,8 @@ export function ProductsSection({ products, onEdit, onDelete }: ProductsSectionP
             <input 
               type="text" 
               placeholder="Filter products..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 text-[10px] font-black uppercase w-full sm:w-64 focus:outline-none focus:border-accent"
             />
           </div>
@@ -53,7 +63,7 @@ export function ProductsSection({ products, onEdit, onDelete }: ProductsSectionP
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {products.map((product) => (
+            {filtered.map((product) => (
               <tr key={product.id} className="hover:bg-gray-50/50 transition-all group">
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-5">

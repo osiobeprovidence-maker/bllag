@@ -1,4 +1,4 @@
-import { ShoppingBag, ArrowLeft, CheckCircle2, Wallet, CreditCard } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, CheckCircle2, Wallet, CreditCard, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useShopStore, useAuthStore } from '../store';
 import { useMutation, useAction, useQuery } from 'convex/react';
@@ -22,6 +22,7 @@ export function Checkout() {
   const [pssStartDate, setPssStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [useSavedAddress, setUseSavedAddress] = useState(false);
   const [saveAddress, setSaveAddress] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const [checkoutAddress, setCheckoutAddress] = useState({
@@ -119,7 +120,7 @@ export function Checkout() {
 
   const openPaystack = () => {
     if (!PAYSTACK_PUBLIC_KEY) {
-      alert("Payment not configured. Please set VITE_PAYSTACK_PUBLIC_KEY.");
+      setError("Payment not configured. Please set VITE_PAYSTACK_PUBLIC_KEY.");
       return;
     }
 
@@ -146,7 +147,7 @@ export function Checkout() {
     e.preventDefault();
 
     if (!checkoutAddress.email || !checkoutAddress.street) {
-      alert("Please fill in all required fields.");
+      setError("Please fill in all required fields.");
       return;
     }
 
@@ -157,13 +158,13 @@ export function Checkout() {
 
     if (paymentMethod === 'wallet') {
       if (!user || user.walletBalance < total) {
-        alert('Insufficient wallet balance');
+        setError('Insufficient wallet balance');
         return;
       }
       updateBalance(-total, 'payment', 'Order Checkout');
     } else if (paymentMethod === 'installment') {
       if (!isAuthenticated) {
-        alert('Please login to use installment plan');
+        setError('Please login to use installment plan');
         return;
       }
 
@@ -215,8 +216,6 @@ export function Checkout() {
     );
   }
 
-  const hasPaystackLib = typeof window !== 'undefined' && (window as any).PaystackPop;
-
   return (
     <div className="pt-24 pb-24 min-h-screen max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <Link to="/cart" className="inline-flex items-center text-sm uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors mb-10">
@@ -227,6 +226,12 @@ export function Checkout() {
         {/* Form */}
         <div className="lg:w-3/5">
           <form onSubmit={handleCheckout} className="space-y-8">
+            {error && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 p-4 mb-6">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <p className="text-xs font-bold text-red-600">{error}</p>
+              </div>
+            )}
             <div className="bg-muted/30 p-6 border border-muted">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold uppercase tracking-tight">Shipping Details</h2>

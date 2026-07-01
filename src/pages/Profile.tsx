@@ -61,11 +61,7 @@ export function Profile() {
   };
 
   const handleImageUpload = () => {
-    const url = prompt('Enter profile image URL:');
-    if (url && user) {
-      updateProfileImage(url);
-      alert('Profile image updated!');
-    }
+    navigate('/settings');
   };
 
   return (

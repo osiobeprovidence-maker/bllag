@@ -215,7 +215,8 @@ export function AdminDashboard() {
                     <ProductsSection 
                       products={products} 
                       onEdit={handleEditProduct} 
-                      onDelete={deleteProduct} 
+                      onDelete={deleteProduct}
+                      onAdd={handleAddProduct}
                     />
                   )}
                   {activeTab === 'orders' && <OrdersSection orders={orders} onUpdate={updateOrder} />}

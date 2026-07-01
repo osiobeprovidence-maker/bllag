@@ -1,4 +1,4 @@
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, Loader2 } from 'lucide-react';
 import { Order } from '../../store';
 import { EmptyState } from '../ui/EmptyState';
 
@@ -8,6 +8,14 @@ interface OrdersSectionProps {
 }
 
 export function OrdersSection({ orders, onUpdate }: OrdersSectionProps) {
+  if (orders === undefined) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   if (orders.length === 0) {
     return (
       <EmptyState 

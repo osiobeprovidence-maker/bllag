@@ -505,31 +505,25 @@ function AdPlacementTab() {
   return (
     <div className="bg-white border border-gray-200 shadow-sm p-8">
       <h2 className="text-xl font-black uppercase tracking-tight mb-6">Ad Placement</h2>
+      <p className="text-[10px] text-muted-foreground font-bold mb-6 uppercase tracking-widest">Manage your store's visual ad placements</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center text-center group cursor-pointer hover:border-accent transition-all"
-          onClick={() => {
-            const tabSelect = document.querySelector<HTMLSelectElement>('.lg\\:hidden select') || document.querySelector('select[value]');
-            const navButtons = document.querySelectorAll('button');
-            navButtons.forEach((btn) => {
-              if (btn.textContent?.includes('Website Customization')) btn.click();
-            });
-          }}>
-          <div className="p-4 bg-white mb-4 group-hover:bg-accent group-hover:text-white transition-colors shadow-sm">
-            <Megaphone className="h-6 w-6" />
+        <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center text-center group cursor-default">
+          <div className="p-4 bg-white mb-4 shadow-sm">
+            <Megaphone className="h-6 w-6 text-accent" />
           </div>
           <h4 className="font-black text-sm uppercase mb-2">Hero Banners</h4>
-          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Go to Website Customization → Hero Banners</p>
+          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Navigate to Website Customization → Hero Banners tab</p>
         </div>
-        <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center text-center group cursor-pointer hover:border-accent transition-all">
-          <div className="p-4 bg-white mb-4 group-hover:bg-accent group-hover:text-white transition-colors shadow-sm">
-            <BarChart3 className="h-6 w-6" />
+        <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center text-center group cursor-default">
+          <div className="p-4 bg-white mb-4 shadow-sm">
+            <BarChart3 className="h-6 w-6 text-accent" />
           </div>
           <h4 className="font-black text-sm uppercase mb-2">Promotional Banners</h4>
-          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Go to Website Customization → Promotional Banners</p>
+          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Navigate to Website Customization → Promotional Banners tab</p>
         </div>
-        <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center text-center group cursor-pointer hover:border-accent transition-all">
-          <div className="p-4 bg-white mb-4 group-hover:bg-accent group-hover:text-white transition-colors shadow-sm">
-            <Sparkles className="h-6 w-6" />
+        <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center text-center group cursor-default">
+          <div className="p-4 bg-white mb-4 shadow-sm">
+            <Sparkles className="h-6 w-6 text-accent" />
           </div>
           <h4 className="font-black text-sm uppercase mb-2">Popup & Announcements</h4>
           <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Create a campaign with type "Popup" or "Announcement Bar"</p>

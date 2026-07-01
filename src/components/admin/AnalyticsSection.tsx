@@ -8,9 +8,8 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
-  LineChart,
-  Line
 } from 'recharts';
+import { Loader2 } from 'lucide-react';
 import { Order } from '../../store';
 
 interface AnalyticsSectionProps {
@@ -18,6 +17,14 @@ interface AnalyticsSectionProps {
 }
 
 export function AnalyticsSection({ orders }: AnalyticsSectionProps) {
+  if (orders === undefined) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   // Process orders for charts
   const revenueByDay = orders.reduce((acc: any[], order) => {
     const day = new Date(order.createdAt).toLocaleDateString('en-NG', { weekday: 'short' });

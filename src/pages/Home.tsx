@@ -61,7 +61,7 @@ function HeroSlider({ banners }: { banners: any[] }) {
       {banners.map((banner, i) => (
         <div
           key={banner._id}
-          className={`absolute inset-0 z-0 transition-opacity duration-${animSpeed}`}
+          className="absolute inset-0 z-0 transition-opacity"
           style={{ opacity: i === current ? 1 : 0, transitionDuration: `${animSpeed}ms` }}
         >
           <img referrerPolicy="no-referrer" src={banner.image} alt={banner.mainHeading} className="w-full h-full object-cover object-center" />
@@ -282,13 +282,15 @@ export function Home() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-1 px-1">
             {[
-              'https://images.unsplash.com/photo-1598560917505-59a3ad559071?auto=format&fit=crop&q=80&w=400',
-              'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?auto=format&fit=crop&q=80&w=400',
-              'https://images.unsplash.com/photo-1635322966219-b75ed372eb01?auto=format&fit=crop&q=80&w=400',
-              'https://images.unsplash.com/photo-1599643477877-530eb83abc8e?auto=format&fit=crop&q=80&w=400',
-            ].map((img, i) => (
-              <div key={i} className="relative aspect-square group overflow-hidden">
-                <img referrerPolicy="no-referrer" src={img} alt={`Instagram ${i}`} className="w-full h-full object-cover" />
+              { bg: 'bg-rose-200', label: 'IG-1' },
+              { bg: 'bg-amber-200', label: 'IG-2' },
+              { bg: 'bg-emerald-200', label: 'IG-3' },
+              { bg: 'bg-violet-200', label: 'IG-4' },
+            ].map((item, i) => (
+              <div key={i} className="relative aspect-square group overflow-hidden bg-gray-100 flex items-center justify-center">
+                <div className={`w-full h-full ${item.bg} flex items-center justify-center`}>
+                  <Instagram className="text-white/60 h-12 w-12" />
+                </div>
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
                   <Instagram className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-8 w-8" />
                 </div>
