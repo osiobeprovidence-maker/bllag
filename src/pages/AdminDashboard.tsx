@@ -55,7 +55,7 @@ export function AdminDashboard() {
     { name: 'Total Revenue', value: `₦${orders.reduce((acc, o) => acc + o.total, 0).toLocaleString()}`, change: '+20.1%', trend: 'up', icon: DollarSign },
     { name: 'Active Sales', value: orders.filter(o => o.status !== 'delivered').length.toString(), change: '+8.2%', trend: 'up', icon: ShoppingCart },
     { name: 'Inventory Count', value: products.length.toString(), change: '+2', trend: 'up', icon: Package },
-    { name: 'Total Customers', value: customers.length.toString(), change: '+12.5%', trend: 'up', icon: Users },
+    { name: 'Total Customers', value: (customers?.length ?? 0).toString(), change: '+12.5%', trend: 'up', icon: Users },
   ];
 
   const sidebarLinks = [
