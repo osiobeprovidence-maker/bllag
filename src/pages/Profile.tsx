@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { User, Package, Settings, LogOut, Shield, Briefcase, MapPin, Phone, Mail, Wallet, ArrowUpRight, Crown, Check, Camera, Loader2 } from 'lucide-react';
+import { User, Package, Settings, LogOut, Shield, Briefcase, MapPin, Phone, Mail, Wallet, ArrowUpRight, Crown, Check, Camera, Loader2, LayoutDashboard } from 'lucide-react';
 import { useAuthStore } from '../store';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 
@@ -12,6 +12,7 @@ export function Profile() {
   const createAddressMutation = useMutation(api.addresses.create);
   const removeAddressMutation = useMutation(api.addresses.remove);
   const navigate = useNavigate();
+  const location = useLocation();
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'settings' | 'wallet' | 'about' | 'contact' | 'agent' | 'membership' | 'address'>('info');
   
@@ -112,6 +113,7 @@ export function Profile() {
             <nav className="space-y-1 bg-muted border border-gray-200 p-4">
               {[
                 { id: 'info', label: 'Personal Info', icon: User },
+                ...(user.role === 'admin' ? [{ id: 'admin', label: 'Admin Dashboard', icon: LayoutDashboard }] : []),
                 { id: 'orders', label: 'Order History', icon: Package },
                 { id: 'wallet', label: 'Wallet', icon: Wallet },
                 { id: 'address', label: 'Saved Address', icon: MapPin },
@@ -123,9 +125,9 @@ export function Profile() {
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => tab.id === 'admin' ? navigate('/admin') : setActiveTab(tab.id as any)}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest transition-all ${
-                    activeTab === tab.id ? 'bg-primary text-primary-foreground' : 'hover:bg-background'
+                    activeTab === tab.id || (tab.id === 'admin' && location.pathname === '/admin') ? 'bg-primary text-primary-foreground' : 'hover:bg-background'
                   }`}
                 >
                   <tab.icon className="w-4 h-4" />
