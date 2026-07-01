@@ -40,6 +40,7 @@ export const create = mutation({
     active: v.boolean(),
     startDate: v.optional(v.string()),
     endDate: v.optional(v.string()),
+    altText: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const session = await ctx.db
@@ -71,6 +72,7 @@ export const update = mutation({
     active: v.optional(v.boolean()),
     startDate: v.optional(v.string()),
     endDate: v.optional(v.string()),
+    altText: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const session = await ctx.db
