@@ -550,73 +550,138 @@ function HomepageSectionsTab({ sections, upsertSection }: any) {
   );
 }
 
+const SETTINGS_SECTIONS = ['flash-sale', 'membership-banner'];
+
 function SectionRow({ section, onUpdate }: { section: any; onUpdate?: (s: any) => void }) {
   const [editing, setEditing] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [title, setTitle] = useState(section.title || '');
   const [visible, setVisible] = useState(section.visible ?? true);
   const [displayOrder, setDisplayOrder] = useState(section.displayOrder ?? 1);
+  const [settings, setSettings] = useState<Record<string, any>>(section.settings || {});
+  const [previewUrl, setPreviewUrl] = useState('');
 
   useEffect(() => {
     setTitle(section.title || '');
     setVisible(section.visible ?? true);
     setDisplayOrder(section.displayOrder ?? 1);
+    setSettings(section.settings || {});
   }, [section]);
 
   const handleSave = () => {
     if (onUpdate) {
-      onUpdate({ ...section, title, visible, displayOrder });
+      const data: any = { ...section, title, visible, displayOrder };
+      if (showSettings) {
+        data.settings = settings;
+      }
+      onUpdate(data);
     }
     setEditing(false);
+    setShowSettings(false);
   };
 
+  const hasSettings = SETTINGS_SECTIONS.includes(section.sectionKey);
+
   return (
-    <tr className="hover:bg-gray-50/50 transition-colors">
-      <td className="px-8 py-6">
-        <span className="inline-flex items-center px-3 py-1 bg-gray-100 text-[9px] font-black uppercase tracking-widest">{section.sectionKey}</span>
-      </td>
-      <td className="px-8 py-6">
-        {editing ? (
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="bg-white border border-gray-200 p-2 text-xs font-bold w-48 focus:outline-none focus:border-accent" />
-        ) : (
-          <p className="font-black text-xs uppercase">{title || section.sectionKey}</p>
-        )}
-      </td>
-      <td className="px-8 py-6">
-        {editing ? (
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={visible} onChange={(e) => setVisible(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-accent focus:ring-accent" />
-            <span className="text-[10px] font-black uppercase tracking-widest">{visible ? 'Visible' : 'Hidden'}</span>
-          </label>
-        ) : (
-          <span className={`inline-flex items-center px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
-            section.visible ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
-          }`}>
-            {section.visible ? 'Visible' : 'Hidden'}
-          </span>
-        )}
-      </td>
-      <td className="px-8 py-6">
-        {editing ? (
-          <input type="number" value={displayOrder} onChange={(e) => setDisplayOrder(Number(e.target.value))} className="bg-white border border-gray-200 p-2 text-xs font-bold w-20 focus:outline-none focus:border-accent" />
-        ) : (
-          <p className="font-black text-xs">{section.displayOrder}</p>
-        )}
-      </td>
-      <td className="px-8 py-6 text-right">
-        {onUpdate && (
-          editing ? (
-            <div className="flex items-center justify-end gap-2">
-              <button onClick={handleSave} className="text-[10px] font-black uppercase tracking-widest text-accent hover:underline">Save</button>
-              <button onClick={() => setEditing(false)} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:underline">Cancel</button>
-            </div>
+    <>
+      <tr className="hover:bg-gray-50/50 transition-colors">
+        <td className="px-8 py-6">
+          <span className="inline-flex items-center px-3 py-1 bg-gray-100 text-[9px] font-black uppercase tracking-widest">{section.sectionKey}</span>
+        </td>
+        <td className="px-8 py-6">
+          {editing ? (
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="bg-white border border-gray-200 p-2 text-xs font-bold w-48 focus:outline-none focus:border-accent" />
           ) : (
-            <button onClick={() => setEditing(true)} className="p-2 hover:bg-gray-100 transition-colors text-muted-foreground hover:text-primary">
-              <Edit2 className="w-3.5 h-3.5" />
-            </button>
-          )
-        )}
-      </td>
-    </tr>
+            <p className="font-black text-xs uppercase">{title || section.sectionKey}</p>
+          )}
+        </td>
+        <td className="px-8 py-6">
+          {editing ? (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={visible} onChange={(e) => setVisible(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-accent focus:ring-accent" />
+              <span className="text-[10px] font-black uppercase tracking-widest">{visible ? 'Visible' : 'Hidden'}</span>
+            </label>
+          ) : (
+            <span className={`inline-flex items-center px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
+              section.visible ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
+            }`}>
+              {section.visible ? 'Visible' : 'Hidden'}
+            </span>
+          )}
+        </td>
+        <td className="px-8 py-6">
+          {editing ? (
+            <input type="number" value={displayOrder} onChange={(e) => setDisplayOrder(Number(e.target.value))} className="bg-white border border-gray-200 p-2 text-xs font-bold w-20 focus:outline-none focus:border-accent" />
+          ) : (
+            <p className="font-black text-xs">{section.displayOrder}</p>
+          )}
+        </td>
+        <td className="px-8 py-6 text-right">
+          {onUpdate && (
+            editing ? (
+              <div className="flex items-center justify-end gap-2">
+                {hasSettings && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSettings(!showSettings)}
+                    className={`text-[10px] font-black uppercase tracking-widest ${showSettings ? 'text-accent' : 'text-muted-foreground'} hover:underline`}
+                  >
+                    {showSettings ? 'Hide Settings' : 'Section Settings'}
+                  </button>
+                )}
+                <button onClick={handleSave} className="text-[10px] font-black uppercase tracking-widest text-accent hover:underline">Save</button>
+                <button onClick={() => { setEditing(false); setShowSettings(false); }} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:underline">Cancel</button>
+              </div>
+            ) : (
+              <button onClick={() => setEditing(true)} className="p-2 hover:bg-gray-100 transition-colors text-muted-foreground hover:text-primary">
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
+            )
+          )}
+        </td>
+      </tr>
+      {editing && showSettings && section.sectionKey === 'flash-sale' && (
+        <tr>
+          <td colSpan={5} className="px-8 py-4 bg-gray-50 border-b border-gray-200">
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black uppercase tracking-widest">Flash Sale Banner Settings</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <ImageUploader
+                    value={settings.image || ''}
+                    onChange={(url) => setSettings({ ...settings, image: url })}
+                    label="Banner Image"
+                    recommendedWidth={900}
+                    recommendedHeight={1200}
+                    minWidth={450}
+                    minHeight={600}
+                    aspectRatio="3:4"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">CTA Text</label>
+                    <input type="text" value={settings.ctaText || ''} onChange={(e) => setSettings({ ...settings, ctaText: e.target.value })}
+                      className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" placeholder="e.g. Shop Flash Sale" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">CTA Link</label>
+                    <input type="url" value={settings.ctaLink || ''} onChange={(e) => setSettings({ ...settings, ctaLink: e.target.value })}
+                      className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" placeholder="/shop" />
+                  </div>
+                </div>
+              </div>
+              {settings.image && (
+                <div className="relative w-full max-w-sm aspect-[3/4] bg-gray-100 border border-gray-200 overflow-hidden">
+                  <img src={settings.image} alt="Preview" className="w-full h-full object-cover" />
+                  <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 text-[8px] font-black uppercase tracking-widest">3:4 Preview</div>
+                </div>
+              )}
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 

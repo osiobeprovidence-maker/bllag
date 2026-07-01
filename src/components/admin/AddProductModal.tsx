@@ -110,11 +110,11 @@ export function AddProductModal({ product, onClose, onSave }: AddProductModalPro
                     <ImageUploader
                       value={formData.image}
                       onChange={(url) => setFormData({ ...formData, image: url })}
-                      recommendedWidth={1500}
-                      recommendedHeight={1500}
+                      recommendedWidth={1000}
+                      recommendedHeight={1250}
                       minWidth={500}
-                      minHeight={500}
-                      aspectRatio="1:1"
+                      minHeight={625}
+                      aspectRatio="4:5"
                       label="Product Imagery"
                     />
                   </div>

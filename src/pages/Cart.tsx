@@ -66,7 +66,7 @@ export function Cart() {
                 className="grid grid-cols-1 sm:grid-cols-6 gap-4 items-center border-b border-muted pb-6"
               >
                 <div className="col-span-1 sm:col-span-3 flex gap-4">
-                  <div className="w-24 aspect-[3/4] bg-muted flex-shrink-0">
+                  <div className="w-24 aspect-[4/5] bg-muted flex-shrink-0">
                     <img referrerPolicy="no-referrer" src={item.image} alt={item.name} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex flex-col justify-center">

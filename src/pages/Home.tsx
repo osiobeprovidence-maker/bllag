@@ -163,34 +163,56 @@ export function Home() {
             <h2 className="text-2xl font-bold uppercase">{flashSaleSection?.title || 'Flash Sale'}</h2>
             <Link to="/shop" className="text-sm font-bold text-accent hover:underline">View All &gt;</Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {flashSaleProducts.map((product: any) => (
-              <Link key={product._id} to={`/product/${product._id}`} className="group block bg-white border border-muted hover:shadow-md transition-shadow">
-                <div className="relative overflow-hidden aspect-[4/5] bg-muted">
-                  <img referrerPolicy="no-referrer" src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  {product.discount && <div className="absolute top-2 left-2"><span className="bg-accent text-white text-xs font-bold px-2 py-1">-{product.discount}%</span></div>}
-                  {product.isNew && !product.discount && <div className="absolute top-2 left-2"><span className="bg-black text-white text-[10px] font-bold px-2 py-1">NEW</span></div>}
-                  <div className="absolute bottom-2 left-2"><span className="bg-white/90 backdrop-blur-sm text-black text-[9px] font-black px-2 py-1 uppercase tracking-tighter shadow-sm">Pay Small Small</span></div>
+          {flashSaleSection?.settings?.image && (
+            <div className="relative w-full aspect-[3/4] sm:aspect-[16/9] md:aspect-[3/1] mb-8 overflow-hidden bg-gray-100">
+              <img
+                referrerPolicy="no-referrer"
+                src={flashSaleSection.settings.image}
+                alt={flashSaleSection?.title || 'Flash Sale'}
+                className="w-full h-full object-cover"
+              />
+              {flashSaleSection.settings.ctaText && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Link
+                    to={flashSaleSection.settings.ctaLink || '/shop'}
+                    className="bg-white text-black px-8 py-3 text-xs font-black uppercase tracking-widest hover:bg-accent hover:text-white transition-all shadow-xl"
+                  >
+                    {flashSaleSection.settings.ctaText}
+                  </Link>
                 </div>
-                <div className="p-3">
-                  <h3 className="text-sm text-gray-800 line-clamp-2 mb-1 group-hover:text-accent transition-colors">{product.name}</h3>
-                  <div className="flex items-center gap-1 mb-1">
-                    <div className="flex text-accent text-[10px]">{'★'.repeat(Math.floor(product.rating || 5))}{'☆'.repeat(5 - Math.floor(product.rating || 5))}</div>
-                    <span className="text-[10px] text-muted-foreground">({product.reviews || 0})</span>
+              )}
+            </div>
+          )}
+          {flashSaleProducts.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {flashSaleProducts.map((product: any) => (
+                <Link key={product._id} to={`/product/${product._id}`} className="group block bg-white border border-muted hover:shadow-md transition-shadow">
+                  <div className="relative overflow-hidden aspect-[4/5] bg-muted">
+                    <img referrerPolicy="no-referrer" src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    {product.discount && <div className="absolute top-2 left-2"><span className="bg-accent text-white text-xs font-bold px-2 py-1">-{product.discount}%</span></div>}
+                    {product.isNew && !product.discount && <div className="absolute top-2 left-2"><span className="bg-black text-white text-[10px] font-bold px-2 py-1">NEW</span></div>}
+                    <div className="absolute bottom-2 left-2"><span className="bg-white/90 backdrop-blur-sm text-black text-[9px] font-black px-2 py-1 uppercase tracking-tighter shadow-sm">Pay Small Small</span></div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-accent">₦{product.price.toLocaleString()}</span>
-                    {product.originalPrice && <span className="text-xs text-muted-foreground line-through">₦{product.originalPrice.toLocaleString()}</span>}
+                  <div className="p-3">
+                    <h3 className="text-sm text-gray-800 line-clamp-2 mb-1 group-hover:text-accent transition-colors">{product.name}</h3>
+                    <div className="flex items-center gap-1 mb-1">
+                      <div className="flex text-accent text-[10px]">{'★'.repeat(Math.floor(product.rating || 5))}{'☆'.repeat(5 - Math.floor(product.rating || 5))}</div>
+                      <span className="text-[10px] text-muted-foreground">({product.reviews || 0})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-bold text-accent">₦{product.price.toLocaleString()}</span>
+                      {product.originalPrice && <span className="text-xs text-muted-foreground line-through">₦{product.originalPrice.toLocaleString()}</span>}
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
       {showMembership && (
-        <section className="my-16 mx-4 sm:mx-6 lg:mx-auto max-w-7xl relative overflow-hidden">
+        <section className="my-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative h-[400px] md:h-[500px]">
             <img referrerPolicy="no-referrer"
               src={promoBanners?.[0]?.desktopImage || 'https://images.unsplash.com/photo-1573408302185-9146fe634ad0?auto=format&fit=crop&q=80&w=2000'}

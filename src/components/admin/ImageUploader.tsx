@@ -41,12 +41,14 @@ export function ImageUploader({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dimensionWarning, setDimensionWarning] = useState(false);
+  const [ratioWarning, setRatioWarning] = useState<string | null>(null);
   const [showMediaLib, setShowMediaLib] = useState(false);
   const generateUploadUrl = useAction(api.upload.generateUploadUrl);
 
   const validateFile = async (file: File): Promise<boolean> => {
     setError(null);
     setDimensionWarning(false);
+    setRatioWarning(null);
 
     if (!accept.split(',').some((t) => file.type === t.trim())) {
       setError(`Invalid file type. Accepted: ${accept.split(',').map((t) => t.split('/')[1].toUpperCase()).join(', ')}`);
@@ -88,6 +90,19 @@ export function ImageUploader({
         setDimensionWarning(true);
       } else if (dims.width < recommendedWidth || dims.height < recommendedHeight) {
         setDimensionWarning(true);
+      }
+
+      if (aspectRatio) {
+        const parts = aspectRatio.split(':');
+        if (parts.length === 2) {
+          const expected = parseFloat(parts[0]) / parseFloat(parts[1]);
+          const actual = dims.width / dims.height;
+          const diff = Math.abs(actual - expected) / expected;
+          if (diff > 0.1) {
+            const actualRatio = `${Math.round(actual * 100) / 100}:1`;
+            setRatioWarning(`Image aspect ratio (${actualRatio}) doesn't match recommended (${aspectRatio}). Images may appear cropped or stretched.`);
+          }
+        }
       }
 
       const uploadUrl = await generateUploadUrl();
@@ -226,6 +241,13 @@ export function ImageUploader({
         <div className="flex items-center gap-2 text-amber-600 bg-amber-50 border border-amber-200 p-3">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span className="text-[10px] font-bold">This image is smaller than the recommended size ({recommendedWidth}×{recommendedHeight}) and may appear blurry.</span>
+        </div>
+      )}
+
+      {ratioWarning && (
+        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 border border-amber-200 p-3">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span className="text-[10px] font-bold">{ratioWarning}</span>
         </div>
       )}
 

@@ -37,7 +37,7 @@ export function Wishlist() {
             transition={{ duration: 0.5, delay: index * 0.1 }}
             className="group relative"
           >
-            <div className="relative overflow-hidden mb-4 bg-muted aspect-[3/4]">
+            <div className="relative overflow-hidden mb-4 bg-muted aspect-[4/5]">
               <img 
                 referrerPolicy="no-referrer"
                 src={product.image} 

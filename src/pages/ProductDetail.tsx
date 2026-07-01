@@ -77,7 +77,7 @@ export function ProductDetail() {
               </button>
             ))}
           </div>
-          <div className="flex-1 aspect-[3/4] bg-muted relative overflow-hidden group">
+          <div className="flex-1 aspect-[4/5] bg-muted relative overflow-hidden group">
             <img 
               referrerPolicy="no-referrer"
               src={product.image} 
