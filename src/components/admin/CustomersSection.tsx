@@ -10,9 +10,10 @@ interface CustomersSectionProps {
     orders: number;
     membership: string;
   }>;
+  onViewAnalytics?: () => void;
 }
 
-export function CustomersSection({ customers }: CustomersSectionProps) {
+export function CustomersSection({ customers, onViewAnalytics }: CustomersSectionProps) {
   if (customers === undefined) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -76,7 +77,12 @@ export function CustomersSection({ customers }: CustomersSectionProps) {
                 </td>
                 <td className="px-8 py-6 font-black text-sm">{c.spent > 0 ? `₦${c.spent.toLocaleString()}` : 'N/A'}</td>
                 <td className="px-8 py-6 text-right">
-                  <button className="text-[10px] font-black uppercase tracking-widest text-accent hover:underline">Full Analytics</button>
+                  <button 
+                    onClick={onViewAnalytics}
+                    className="text-[10px] font-black uppercase tracking-widest text-accent hover:underline"
+                  >
+                    Full Analytics
+                  </button>
                 </td>
               </tr>
             ))}

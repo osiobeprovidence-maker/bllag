@@ -36,10 +36,13 @@ export function AdminDashboard() {
   const { isAuthenticated, user } = useAuthStore();
   const { products, orders, collections, customers, installments, loading, addProduct, updateProduct, deleteProduct, updateOrder, addCollection,
     banners, categoryImages, sections, promoBanners, media, settings,
+    campaigns, coupons,
     createBanner, updateBanner, removeBanner, reorderBanner,
     createCategory, updateCategory, removeCategory,
     upsertSection, createPromoBanner, updatePromoBanner, removePromoBanner,
     setSetting, createMedia, removeMedia,
+    createCampaign, updateCampaign, removeCampaign,
+    createCoupon, updateCoupon, removeCoupon,
   } = useAdmin();
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -59,11 +62,14 @@ export function AdminDashboard() {
     setShowAddProduct(true);
   };
 
+  const totalRevenue = orders.reduce((acc, o) => acc + o.total, 0);
+  const avgOrderValue = totalRevenue / Math.max(orders.length, 1);
+  const activeSales = orders.filter(o => o.status !== 'delivered').length;
   const stats = [
-    { name: 'Total Revenue', value: `₦${orders.reduce((acc, o) => acc + o.total, 0).toLocaleString()}`, change: '+20.1%', trend: 'up', icon: DollarSign },
-    { name: 'Active Sales', value: orders.filter(o => o.status !== 'delivered').length.toString(), change: '+8.2%', trend: 'up', icon: ShoppingCart },
-    { name: 'Inventory Count', value: products.length.toString(), change: '+2', trend: 'up', icon: Package },
-    { name: 'Total Customers', value: (customers?.length ?? 0).toString(), change: '+12.5%', trend: 'up', icon: Users },
+    { name: 'Total Revenue', value: `₦${totalRevenue.toLocaleString()}`, change: `+₦${Math.round(avgOrderValue).toLocaleString()}`, trend: 'up', icon: DollarSign },
+    { name: 'Active Sales', value: activeSales.toString(), change: `+${activeSales}`, trend: 'up', icon: ShoppingCart },
+    { name: 'Inventory Count', value: products.length.toString(), change: `+${products.length}`, trend: 'up', icon: Package },
+    { name: 'Total Customers', value: (customers?.length ?? 0).toString(), change: `+${customers?.length ?? 0}`, trend: 'up', icon: Users },
   ];
 
   const sidebarLinks = [
@@ -213,7 +219,7 @@ export function AdminDashboard() {
                     />
                   )}
                   {activeTab === 'orders' && <OrdersSection orders={orders} onUpdate={updateOrder} />}
-                  {activeTab === 'customers' && <CustomersSection customers={customers} />}
+                  {activeTab === 'customers' && <CustomersSection customers={customers} onViewAnalytics={() => setActiveTab('analytics')} />}
                   {activeTab === 'installments' && <InstallmentsSection installments={installments} />}
                   {activeTab === 'customization' && (
                     <WebsiteCustomization
@@ -239,7 +245,18 @@ export function AdminDashboard() {
                       removeMedia={removeMedia}
                     />
                   )}
-                  {activeTab === 'marketing' && <MarketingSection />}
+                  {activeTab === 'marketing' && (
+                    <MarketingSection
+                      campaigns={campaigns}
+                      coupons={coupons}
+                      createCampaign={createCampaign}
+                      updateCampaign={updateCampaign}
+                      removeCampaign={removeCampaign}
+                      createCoupon={createCoupon}
+                      updateCoupon={updateCoupon}
+                      removeCoupon={removeCoupon}
+                    />
+                  )}
                 </>
               )}
             </motion.div>

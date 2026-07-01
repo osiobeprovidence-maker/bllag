@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Collection } from '../../store';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
+import { ImageUploader } from './ImageUploader';
 
 interface CollectionsSectionProps {
   collections: Collection[];
@@ -47,12 +48,15 @@ export function CollectionsSection({ collections, onAdd, onUpdate, onDelete }: C
             onChange={(e) => setNewColl({ ...newColl, description: e.target.value })}
             className="w-full bg-white border border-gray-200 p-3 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-accent"
           />
-          <input 
-            type="url" 
-            placeholder="Image URL"
+          <ImageUploader
             value={newColl.image}
-            onChange={(e) => setNewColl({ ...newColl, image: e.target.value })}
-            className="w-full bg-white border border-gray-200 p-3 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-accent"
+            onChange={(url) => setNewColl({ ...newColl, image: url })}
+            recommendedWidth={1200}
+            recommendedHeight={1200}
+            minWidth={400}
+            minHeight={400}
+            aspectRatio="1:1"
+            label="Collection Image"
           />
           <div className="flex gap-2">
             <button onClick={handleAdd} className="flex-1 bg-primary text-white py-3 text-[10px] font-black uppercase tracking-widest hover:bg-accent transition-all">

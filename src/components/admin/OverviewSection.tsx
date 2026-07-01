@@ -10,7 +10,34 @@ interface OverviewSectionProps {
 
 export function OverviewSection({ stats, orders }: OverviewSectionProps) {
   const [isActivityOpen, setIsActivityOpen] = useState(false);
-  const recentOrders = orders.slice(0, 5);
+  const [showFilter, setShowFilter] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [showLogModal, setShowLogModal] = useState(false);
+  const filteredOrders = activeFilter === 'All' ? orders : orders.filter(o => o.status === activeFilter.toLowerCase());
+  const recentOrders = filteredOrders.slice(0, 5);
+
+  const handleDownload = () => {
+    const headers = ['ID', 'Customer', 'City', 'Total', 'Status', 'Payment', 'Date'];
+    const csvRows = [headers.join(',')];
+    orders.forEach(o => {
+      csvRows.push([
+        o.id,
+        `"${o.customerName}"`,
+        `"${o.shippingAddress?.city || 'N/A'}"`,
+        o.total,
+        o.status,
+        o.paymentStatus,
+        new Date(o.createdAt).toISOString()
+      ].join(','));
+    });
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'orders.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-12">
@@ -51,9 +78,24 @@ export function OverviewSection({ stats, orders }: OverviewSectionProps) {
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-xl font-black uppercase tracking-tight">Recent Orders</h2>
               <div className="flex gap-2">
-                <button className="p-2 bg-gray-50 hover:bg-gray-100 transition-colors"><Filter className="h-4 w-4" /></button>
-                <button className="p-2 bg-gray-50 hover:bg-gray-100 transition-colors"><Download className="h-4 w-4" /></button>
+                <button onClick={() => setShowFilter(!showFilter)} className="p-2 bg-gray-50 hover:bg-gray-100 transition-colors"><Filter className="h-4 w-4" /></button>
+                <button onClick={handleDownload} className="p-2 bg-gray-50 hover:bg-gray-100 transition-colors"><Download className="h-4 w-4" /></button>
               </div>
+              {showFilter && (
+                <div className="flex flex-wrap gap-2 mb-4 p-3 bg-gray-50 border border-gray-200">
+                  {['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'].map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => { setActiveFilter(f); setShowFilter(false); }}
+                      className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border transition-colors ${
+                        activeFilter === f ? 'bg-accent text-white border-accent' : 'bg-white border-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             {recentOrders.length === 0 ? (
               <EmptyState
@@ -103,12 +145,39 @@ export function OverviewSection({ stats, orders }: OverviewSectionProps) {
                 ))
               )}
             </div>
-            <button className="w-full mt-8 py-3 text-[10px] font-black uppercase tracking-widest border border-gray-200 hover:bg-gray-50 transition-colors">
+            <button onClick={() => setShowLogModal(true)} className="w-full mt-8 py-3 text-[10px] font-black uppercase tracking-widest border border-gray-200 hover:bg-gray-50 transition-colors">
               View System Logs
             </button>
           </div>
         </div>
       </section>
+
+      {showLogModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowLogModal(false)}>
+          <div className="bg-white border border-gray-200 shadow-sm p-8 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black uppercase tracking-tight">System Logs</h2>
+              <button onClick={() => setShowLogModal(false)} className="p-2 bg-gray-50 hover:bg-gray-100 transition-colors text-[10px] font-black uppercase tracking-widest">Close</button>
+            </div>
+            {orders.length === 0 ? (
+              <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest text-center py-12">No log entries</p>
+            ) : (
+              <div className="space-y-4">
+                {[...orders].reverse().map((order) => (
+                  <div key={order.id} className="flex items-start gap-4 p-4 bg-gray-50/50 border-l-2 border-accent">
+                    <div className="min-w-0">
+                      <p className="text-xs font-black uppercase">Order #{order.id.slice(0, 8)}</p>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{order.customerName}</p>
+                      <p className="text-[10px] text-accent font-black uppercase tracking-widest mt-1">Status changed to {order.status}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-1">{new Date(order.createdAt).toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

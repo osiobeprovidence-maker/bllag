@@ -138,9 +138,7 @@ export function Checkout() {
       callback: (response: any) => {
         handlePaystackSuccess(response.reference);
       },
-      onClose: () => {
-        console.log("Paystack popup closed");
-      },
+      onClose: () => {},
     }).openIframe();
   };
 

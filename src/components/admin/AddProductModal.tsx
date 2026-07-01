@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Plus, X, Image as ImageIcon } from 'lucide-react';
 import { Product } from '../../store';
+import { ImageUploader } from './ImageUploader';
 
 interface AddProductModalProps {
   product?: Product | null;
@@ -17,7 +18,7 @@ export function AddProductModal({ product, onClose, onSave }: AddProductModalPro
     originalPrice: 0,
     discount: 0,
     description: '',
-    image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=1000',
+    image: '',
     isBestSeller: false,
     isNew: true,
     rating: 5,
@@ -106,27 +107,18 @@ export function AddProductModal({ product, onClose, onSave }: AddProductModalPro
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest mb-3 block text-muted-foreground">Product Imagery</label>
-                    <div className="flex gap-2">
-                      <input 
-                        type="url" 
-                        required
-                        value={formData.image}
-                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                        className="flex-1 bg-gray-50 border border-gray-200 p-4 text-[10px] font-black uppercase tracking-widest focus:outline-none focus:border-accent"
-                        placeholder="Image URL"
-                      />
-
-                    </div>
+                    <ImageUploader
+                      value={formData.image}
+                      onChange={(url) => setFormData({ ...formData, image: url })}
+                      recommendedWidth={1500}
+                      recommendedHeight={1500}
+                      minWidth={500}
+                      minHeight={500}
+                      aspectRatio="1:1"
+                      label="Product Imagery"
+                    />
                   </div>
                 </div>
-
-                {formData.image && (
-                  <div className="relative w-full aspect-video bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden">
-                    <img src={formData.image} alt="Preview" className="w-full h-full object-contain" />
-                    <div className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 text-[8px] font-black uppercase tracking-widest">Preview</div>
-                  </div>
-                )}
 
                 <div className="grid grid-cols-2 gap-6">
                   <div>

@@ -15,6 +15,8 @@ export function useAdmin() {
   const rawPromoBanners = useQuery(api.promotionalBanners.list);
   const rawMedia = useQuery(api.mediaLibrary.list);
   const rawSettings = useQuery(api.websiteSettings.getAll);
+  const rawCampaigns = useQuery(api.campaigns.list);
+  const rawCoupons = useQuery(api.coupons.list);
 
   const addProduct = useMutation(api.products.create);
   const updateProduct = useMutation(api.products.update);
@@ -36,6 +38,12 @@ export function useAdmin() {
   const setSetting = useMutation(api.websiteSettings.set);
   const createMedia = useMutation(api.mediaLibrary.create);
   const removeMedia = useMutation(api.mediaLibrary.remove);
+  const createCampaign = useMutation(api.campaigns.create);
+  const updateCampaign = useMutation(api.campaigns.update);
+  const removeCampaign = useMutation(api.campaigns.remove);
+  const createCoupon = useMutation(api.coupons.create);
+  const updateCoupon = useMutation(api.coupons.update);
+  const removeCoupon = useMutation(api.coupons.remove);
 
   const isAdmin = isAuthenticated && user?.role === 'admin';
 
@@ -78,6 +86,8 @@ export function useAdmin() {
   const sections = (rawSections ?? []).map((s: any) => ({ ...s, id: s._id }));
   const promoBanners = (rawPromoBanners ?? []).map((p: any) => ({ ...p, id: p._id }));
   const media = (rawMedia ?? []).map((m: any) => ({ ...m, id: m._id }));
+  const campaigns = (rawCampaigns ?? []).map((c: any) => ({ ...c, id: c._id }));
+  const coupons = (rawCoupons ?? []).map((c: any) => ({ ...c, id: c._id }));
   const settings = rawSettings ?? {};
 
   const wrap = (fn: any) => (data: any) => fn({ sessionId, ...data });
@@ -95,6 +105,8 @@ export function useAdmin() {
     sections: isAdmin ? sections : [],
     promoBanners: isAdmin ? promoBanners : [],
     media: isAdmin ? media : [],
+    campaigns: isAdmin ? campaigns : [],
+    coupons: isAdmin ? coupons : [],
     settings: isAdmin ? settings : {},
     loading: !isAdmin ? false : rawProducts === undefined,
     addProduct: (product: any) => addProduct(product),
@@ -117,5 +129,11 @@ export function useAdmin() {
     setSetting: (key: string, value: any) => setSetting({ sessionId, key, value }),
     createMedia: wrap(createMedia),
     removeMedia: wrapIdOnly(removeMedia),
+    createCampaign: wrap(createCampaign),
+    updateCampaign: wrapWithId(updateCampaign),
+    removeCampaign: wrapIdOnly(removeCampaign),
+    createCoupon: wrap(createCoupon),
+    updateCoupon: wrapWithId(updateCoupon),
+    removeCoupon: wrapIdOnly(removeCoupon),
   };
 }
