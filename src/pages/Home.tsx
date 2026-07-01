@@ -127,6 +127,8 @@ export function Home() {
   const categories = useQuery(api.categoryImages.list);
   const sections = useQuery(api.homepageSections.list);
   const promoBanners = useQuery(api.promotionalBanners.getActive);
+  const instagramPosts = useQuery(api.instagram.getActivePosts);
+  const instagramSettings = useQuery(api.instagram.getSettings);
 
   const sectionMap: Record<string, any> = {};
   (sections ?? []).forEach((s: any) => { sectionMap[s.sectionKey] = s; });
@@ -141,7 +143,7 @@ export function Home() {
   const showTrending = trendingSection?.visible !== false;
   const showMembership = membershipSection?.visible !== false;
   const showBrandValues = brandValuesSection?.visible !== false;
-  const showInstagram = instagramSection?.visible !== false;
+  const showInstagram = instagramSection?.visible !== false && instagramSettings?.enabled !== false;
 
   const flashSaleProducts = products.filter((p: any) => p.isNew || p.discount).slice(0, 10);
 
@@ -303,28 +305,37 @@ export function Home() {
         </section>
       )}
 
-      {showInstagram && (
+      {showInstagram && instagramPosts && instagramPosts.length > 0 && (
         <section className="py-24 border-t border-muted">
           <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold uppercase tracking-tight mb-4">@blag_official</h2>
-            <p className="text-sm text-muted-foreground uppercase tracking-widest">Follow us on Instagram</p>
+            <h2 className="text-2xl font-bold uppercase tracking-tight mb-4">{instagramSettings?.title || '@blag_official'}</h2>
+            <p className="text-sm text-muted-foreground uppercase tracking-widest">{instagramSettings?.subtitle || 'Follow us on Instagram'}</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-1 px-1">
-            {[
-              { bg: 'bg-rose-200', label: 'IG-1' },
-              { bg: 'bg-amber-200', label: 'IG-2' },
-              { bg: 'bg-emerald-200', label: 'IG-3' },
-              { bg: 'bg-violet-200', label: 'IG-4' },
-            ].map((item, i) => (
-              <div key={i} className="relative aspect-square group overflow-hidden bg-gray-100 flex items-center justify-center">
-                <div className={`w-full h-full ${item.bg} flex items-center justify-center`}>
-                  <Instagram className="text-white/60 h-12 w-12" />
-                </div>
+            {instagramPosts.slice(0, 8).map((post: any) => (
+              <a
+                key={post._id}
+                href={post.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative aspect-square group overflow-hidden bg-gray-100"
+              >
+                <img src={post.image} alt={post.altText || post.caption} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
                   <Instagram className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-8 w-8" />
                 </div>
-              </div>
+              </a>
             ))}
+          </div>
+          <div className="text-center mt-8">
+            <a
+              href={instagramSettings?.profileUrl || 'https://instagram.com/blag_official'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-black text-white px-8 py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-all"
+            >
+              <Instagram className="w-4 h-4" /> {instagramSettings?.buttonText || 'Follow Us'}
+            </a>
           </div>
         </section>
       )}

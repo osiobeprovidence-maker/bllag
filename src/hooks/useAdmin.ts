@@ -17,6 +17,8 @@ export function useAdmin() {
   const rawSettings = useQuery(api.websiteSettings.getAll);
   const rawCampaigns = useQuery(api.campaigns.list);
   const rawCoupons = useQuery(api.coupons.list);
+  const rawInstagramPosts = useQuery(api.instagram.listPosts);
+  const rawInstagramSettings = useQuery(api.instagram.getSettings);
 
   const addProduct = useMutation(api.products.create);
   const updateProduct = useMutation(api.products.update);
@@ -46,6 +48,11 @@ export function useAdmin() {
   const createCoupon = useMutation(api.coupons.create);
   const updateCoupon = useMutation(api.coupons.update);
   const removeCoupon = useMutation(api.coupons.remove);
+  const createInstagramPost = useMutation(api.instagram.createPost);
+  const updateInstagramPost = useMutation(api.instagram.updatePost);
+  const removeInstagramPost = useMutation(api.instagram.removePost);
+  const reorderInstagramPosts = useMutation(api.instagram.reorderPosts);
+  const updateInstagramSettings = useMutation(api.instagram.updateSettings);
 
   const isAdmin = isAuthenticated && user?.role === 'admin';
 
@@ -90,6 +97,8 @@ export function useAdmin() {
   const media = (rawMedia ?? []).map((m: any) => ({ ...m, id: m._id }));
   const campaigns = (rawCampaigns ?? []).map((c: any) => ({ ...c, id: c._id }));
   const coupons = (rawCoupons ?? []).map((c: any) => ({ ...c, id: c._id }));
+  const instagramPosts = (rawInstagramPosts ?? []).map((p: any) => ({ ...p, id: p._id }));
+  const instagramSettings = rawInstagramSettings ?? {};
   const settings = rawSettings ?? {};
 
   const wrap = (fn: any) => (data: any) => fn({ sessionId, ...data });
@@ -109,6 +118,8 @@ export function useAdmin() {
     media: isAdmin ? media : [],
     campaigns: isAdmin ? campaigns : [],
     coupons: isAdmin ? coupons : [],
+    instagramPosts: isAdmin ? instagramPosts : [],
+    instagramSettings: isAdmin ? instagramSettings : {},
     settings: isAdmin ? settings : {},
     loading: !isAdmin ? false : rawProducts === undefined,
     addProduct: (product: any) => addProduct(product),
@@ -140,5 +151,11 @@ export function useAdmin() {
     createCoupon: wrap(createCoupon),
     updateCoupon: wrapWithId(updateCoupon),
     removeCoupon: wrapIdOnly(removeCoupon),
+    createInstagramPost: wrap(createInstagramPost),
+    updateInstagramPost: wrapWithId(updateInstagramPost),
+    removeInstagramPost: wrapIdOnly(removeInstagramPost),
+    reorderInstagramPosts: (items: { id: string; displayOrder: number }[]) =>
+      reorderInstagramPosts({ sessionId, items: items.map(i => ({ id: i.id as any, displayOrder: i.displayOrder })) }),
+    updateInstagramSettings: (settings: any) => updateInstagramSettings({ sessionId, settings }),
   };
 }

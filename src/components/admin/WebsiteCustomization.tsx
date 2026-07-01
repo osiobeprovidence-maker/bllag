@@ -6,7 +6,7 @@ import { FOCAL_POINTS } from '../../lib/imageConfig';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 
-type CmsTab = 'slider-settings' | 'hero-banners' | 'category-images' | 'homepage-sections' | 'promotional-banners' | 'media-library';
+type CmsTab = 'slider-settings' | 'hero-banners' | 'category-images' | 'homepage-sections' | 'promotional-banners' | 'media-library' | 'instagram-feed';
 
 interface WebsiteCustomizationProps {
   banners: any[];
@@ -31,6 +31,13 @@ interface WebsiteCustomizationProps {
   removeMedia: (id: string) => any;
   renameMedia?: (data: { id: string; name: string }) => any;
   updateAlt?: (data: { id: string; alt?: string; title?: string; description?: string }) => any;
+  instagramPosts?: any[];
+  instagramSettings?: any;
+  createInstagramPost?: (data: any) => any;
+  updateInstagramPost?: (id: string, data: any) => any;
+  removeInstagramPost?: (id: string) => any;
+  reorderInstagramPosts?: (items: { id: string; displayOrder: number }[]) => any;
+  updateInstagramSettings?: (settings: any) => any;
 }
 
 const cmsTabs: { id: CmsTab; name: string }[] = [
@@ -40,6 +47,7 @@ const cmsTabs: { id: CmsTab; name: string }[] = [
   { id: 'homepage-sections', name: 'Homepage Sections' },
   { id: 'promotional-banners', name: 'Promotional Banners' },
   { id: 'media-library', name: 'Media Library' },
+  { id: 'instagram-feed', name: 'Instagram Feed' },
 ];
 
 const DEFAULT_SECTIONS = [
@@ -60,6 +68,8 @@ export function WebsiteCustomization({
   createCategory, updateCategory, removeCategory,
   upsertSection, createPromoBanner, updatePromoBanner, removePromoBanner,
   setSetting, createMedia, removeMedia, renameMedia, updateAlt,
+  instagramPosts, instagramSettings,
+  createInstagramPost, updateInstagramPost, removeInstagramPost, reorderInstagramPosts, updateInstagramSettings,
 }: WebsiteCustomizationProps) {
   const [activeCmsTab, setActiveCmsTab] = useState<CmsTab>('slider-settings');
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
@@ -69,9 +79,314 @@ export function WebsiteCustomization({
     return (
       <div className="flex items-center justify-center py-24">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
+
+function InstagramFeedTab({ posts, settings, createPost, updatePost, removePost, reorderPosts, updateSettings, media }: any) {
+  const [showSettings, setShowSettings] = useState(false);
+  const [localSettings, setLocalSettings] = useState({
+    enabled: true, title: '', subtitle: '', username: '', profileUrl: '', buttonText: 'Follow Us', feedSource: 'manual',
+  });
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    image: '', video: '', caption: '', link: '', altText: '', displayOrder: 1, active: true,
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (settings) {
+      setLocalSettings({
+        enabled: settings.enabled ?? true,
+        title: settings.title || '',
+        subtitle: settings.subtitle || '',
+        username: settings.username || '',
+        profileUrl: settings.profileUrl || '',
+        buttonText: settings.buttonText || 'Follow Us',
+        feedSource: settings.feedSource || 'manual',
+      });
+    }
+  }, [settings]);
+
+  const resetForm = () => {
+    setForm({ image: '', video: '', caption: '', link: '', altText: '', displayOrder: 1, active: true });
+    setEditingId(null);
+    setShowForm(false);
+  };
+
+  const handleEdit = (p: any) => {
+    setForm({
+      image: p.image || '', video: p.video || '', caption: p.caption || '',
+      link: p.link || '', altText: p.altText || '',
+      displayOrder: p.displayOrder ?? 1, active: p.active ?? true,
+    });
+    setEditingId(p.id);
+    setShowForm(true);
+  };
+
+  const handleSave = () => {
+    if (editingId) {
+      updatePost(editingId, form);
+    } else {
+      createPost(form);
+    }
+    resetForm();
+  };
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    await updateSettings(localSettings);
+    setSavingSettings(false);
+    setShowSettings(false);
+  };
+
+  const handleDragStart = (index: number) => {
+    setDragIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === index) return;
+    const sorted = [...posts].sort((a: any, b: any) => a.displayOrder - b.displayOrder);
+    const [moved] = sorted.splice(dragIndex, 1);
+    sorted.splice(index, 0, moved);
+    setDragIndex(index);
+    reorderPosts(sorted.map((p: any, i: number) => ({ id: p.id, displayOrder: i + 1 })));
+  };
+
+  const sortedPosts = [...posts].sort((a: any, b: any) => a.displayOrder - b.displayOrder);
+
+  return (
+    <div className="space-y-8">
+      {/* Settings Panel */}
+      <div className="bg-white border border-gray-200 shadow-sm">
+        <div className="p-8 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="text-xl font-black uppercase tracking-tight">Instagram Feed Settings</h2>
+          <button onClick={() => setShowSettings(!showSettings)}
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-accent transition-all"
+          >
+            {showSettings ? 'Cancel' : 'Edit Settings'}
+          </button>
+        </div>
+        {showSettings && (
+          <div className="bg-gray-50 border-b border-gray-200 p-8 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Title</label>
+                <input type="text" value={localSettings.title} onChange={(e) => setLocalSettings({ ...localSettings, title: e.target.value })}
+                  className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Subtitle</label>
+                <input type="text" value={localSettings.subtitle} onChange={(e) => setLocalSettings({ ...localSettings, subtitle: e.target.value })}
+                  className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Instagram Username</label>
+                <input type="text" value={localSettings.username} onChange={(e) => setLocalSettings({ ...localSettings, username: e.target.value })}
+                  className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Profile URL</label>
+                <input type="url" value={localSettings.profileUrl} onChange={(e) => setLocalSettings({ ...localSettings, profileUrl: e.target.value })}
+                  className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Button Text</label>
+                <input type="text" value={localSettings.buttonText} onChange={(e) => setLocalSettings({ ...localSettings, buttonText: e.target.value })}
+                  className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Feed Source</label>
+                <select value={localSettings.feedSource} onChange={(e) => setLocalSettings({ ...localSettings, feedSource: e.target.value })}
+                  className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent">
+                  <option value="manual">Manual Upload</option>
+                  <option value="api">Instagram API</option>
+                </select>
+                {localSettings.feedSource === 'api' && (
+                  <p className="mt-2 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 p-2 font-bold">Instagram API integration is pending. Posts will still be managed manually.</p>
+                )}
+              </div>
+            </div>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={localSettings.enabled} onChange={(e) => setLocalSettings({ ...localSettings, enabled: e.target.checked })}
+                className="w-4 h-4 rounded border-gray-300 text-accent focus:ring-accent" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Section Enabled</span>
+            </label>
+            <div className="flex gap-2">
+              <button onClick={handleSaveSettings} disabled={savingSettings}
+                className="flex-1 bg-primary text-white py-3 text-[10px] font-black uppercase tracking-widest hover:bg-accent transition-all disabled:opacity-50"
+              >
+                {savingSettings ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
+          </div>
+        )}
+        {!showSettings && (
+          <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+            <div><span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Title</span><p className="font-bold">{localSettings.title}</p></div>
+            <div><span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Username</span><p className="font-bold">@{localSettings.username}</p></div>
+            <div><span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Source</span><p className="font-bold">{localSettings.feedSource === 'manual' ? 'Manual Upload' : 'Instagram API'}</p></div>
+            <div><span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Enabled</span><p className="font-bold">{localSettings.enabled ? 'Yes' : 'No'}</p></div>
+          </div>
+        )}
       </div>
-    );
-  }
+
+      {/* Posts Management */}
+      <div className="bg-white border border-gray-200 shadow-sm">
+        <div className="p-8 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="text-xl font-black uppercase tracking-tight">Instagram Posts</h2>
+          <button onClick={() => { resetForm(); setShowForm(true); }}
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-accent transition-all"
+          >
+            <Plus className="w-3 h-3" /> Add Post
+          </button>
+        </div>
+
+        {showForm && (
+          <div className="bg-gray-50 border-b border-gray-200 p-8 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <ImageUploader
+                  value={form.image}
+                  onChange={(url) => setForm({ ...form, image: url })}
+                  label="Post Image"
+                  imageType="product"
+                  showAltInput
+                  altValue={form.altText}
+                  onAltChange={(val) => setForm({ ...form, altText: val })}
+                  mediaLibrary={media}
+                />
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Video URL (optional)</label>
+                  <input type="url" value={form.video} onChange={(e) => setForm({ ...form, video: e.target.value })}
+                    className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Caption</label>
+                  <textarea rows={3} value={form.caption} onChange={(e) => setForm({ ...form, caption: e.target.value })}
+                    className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Instagram URL</label>
+                  <input type="url" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })}
+                    className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest mb-2 block text-muted-foreground">Display Order</label>
+                  <input type="number" value={form.displayOrder} onChange={(e) => setForm({ ...form, displayOrder: Number(e.target.value) })}
+                    className="w-full bg-white border border-gray-200 p-3 text-xs font-bold focus:outline-none focus:border-accent" />
+                </div>
+              </div>
+            </div>
+            {form.image && (
+              <div className="w-48 h-48 bg-gray-100 border border-gray-200 overflow-hidden">
+                <img src={form.image} alt="Preview" className="w-full h-full object-cover" />
+              </div>
+            )}
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })}
+                className="w-4 h-4 rounded border-gray-300 text-accent focus:ring-accent" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Active</span>
+            </label>
+            <div className="flex gap-2">
+              <button onClick={handleSave} className="flex-1 bg-primary text-white py-3 text-[10px] font-black uppercase tracking-widest hover:bg-accent transition-all">
+                {editingId ? 'Update Post' : 'Save Post'}
+              </button>
+              <button onClick={resetForm} className="px-6 py-3 border border-gray-300 text-[10px] font-black uppercase tracking-widest hover:bg-gray-100 transition-all">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {sortedPosts.length === 0 && !showForm ? (
+          <div className="p-8">
+            <EmptyState icon={Image} title="No Instagram Posts" message="Add Instagram posts to display on the homepage." />
+          </div>
+        ) : (
+          <div className="p-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {sortedPosts.map((p: any, idx: number) => (
+                <div
+                  key={p.id}
+                  draggable
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDragEnd={() => setDragIndex(null)}
+                  className={`bg-white border border-gray-200 overflow-hidden group cursor-grab active:cursor-grabbing transition-all ${
+                    dragIndex === idx ? 'opacity-50 ring-2 ring-accent' : ''
+                  }`}
+                >
+                  <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                    <img src={p.image} alt={p.altText || p.caption} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      <span className={`px-2 py-1 text-[8px] font-black uppercase tracking-widest ${
+                        p.active ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
+                      }`}>
+                        {p.active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                      <button onClick={() => handleEdit(p)}
+                        className="bg-white text-black px-3 py-1.5 text-[9px] font-black uppercase tracking-widest hover:bg-accent hover:text-white transition-all">
+                        <Edit2 className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => removePost(p.id)}
+                        className="bg-red-500 text-white px-3 py-1.5 text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-all">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest truncate">{p.caption}</p>
+                    <p className="text-[9px] text-muted-foreground font-bold truncate mt-1">Order: {p.displayOrder}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Live Preview */}
+      {localSettings.enabled && sortedPosts.length > 0 && (
+        <div className="bg-white border border-gray-200 shadow-sm">
+          <div className="p-8 border-b border-gray-100">
+            <h2 className="text-xl font-black uppercase tracking-tight">Live Preview</h2>
+          </div>
+          <div className="p-8">
+            <div className="text-center mb-8">
+              <h3 className="text-xl font-bold uppercase tracking-tight mb-2">{localSettings.title}</h3>
+              <p className="text-xs text-muted-foreground uppercase tracking-widest">{localSettings.subtitle}</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
+              {sortedPosts.filter((p: any) => p.active).slice(0, 8).map((p: any) => (
+                <a key={p.id} href={p.link} target="_blank" rel="noopener noreferrer"
+                  className="relative aspect-square group overflow-hidden bg-gray-100"
+                >
+                  <img src={p.image} alt={p.altText || p.caption} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                    <Instagram className="text-white opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8" />
+                  </div>
+                </a>
+              ))}
+            </div>
+            <div className="text-center mt-6">
+              <a href={localSettings.profileUrl} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-black text-white px-6 py-3 text-xs font-bold uppercase tracking-widest hover:bg-accent transition-all"
+              >
+                <Instagram className="w-4 h-4" /> {localSettings.buttonText}
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
   const maxWClass = previewDevice === 'mobile' ? 'max-w-[375px]' : previewDevice === 'tablet' ? 'max-w-[768px]' : 'max-w-full';
 
@@ -131,6 +446,18 @@ export function WebsiteCustomization({
       )}
       {activeCmsTab === 'media-library' && (
         <MediaLibraryTab media={media} createMedia={createMedia} removeMedia={removeMedia} renameMedia={renameMedia} updateAlt={updateAlt} />
+      )}
+      {activeCmsTab === 'instagram-feed' && (
+        <InstagramFeedTab
+          posts={instagramPosts || []}
+          settings={instagramSettings}
+          createPost={createInstagramPost}
+          updatePost={updateInstagramPost}
+          removePost={removeInstagramPost}
+          reorderPosts={reorderInstagramPosts}
+          updateSettings={updateInstagramSettings}
+          media={media}
+        />
       )}
       </div>
     </div>

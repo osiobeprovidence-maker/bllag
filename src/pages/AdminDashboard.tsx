@@ -43,6 +43,8 @@ export function AdminDashboard() {
     setSetting,     createMedia, removeMedia, renameMedia, updateAlt,
     createCampaign, updateCampaign, removeCampaign,
     createCoupon, updateCoupon, removeCoupon,
+    instagramPosts, instagramSettings,
+    createInstagramPost, updateInstagramPost, removeInstagramPost, reorderInstagramPosts, updateInstagramSettings,
   } = useAdmin();
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -246,6 +248,13 @@ export function AdminDashboard() {
                       removeMedia={removeMedia}
                       renameMedia={renameMedia}
                       updateAlt={updateAlt}
+                      instagramPosts={instagramPosts}
+                      instagramSettings={instagramSettings}
+                      createInstagramPost={createInstagramPost}
+                      updateInstagramPost={updateInstagramPost}
+                      removeInstagramPost={removeInstagramPost}
+                      reorderInstagramPosts={reorderInstagramPosts}
+                      updateInstagramSettings={updateInstagramSettings}
                     />
                   )}
                   {activeTab === 'marketing' && (

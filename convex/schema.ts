@@ -287,4 +287,21 @@ export default defineSchema({
     active: v.boolean(),
     createdAt: v.string(),
   }).index("by_code", ["code"]),
+
+  instagramPosts: defineTable({
+    image: v.string(),
+    video: v.optional(v.string()),
+    caption: v.string(),
+    link: v.string(),
+    altText: v.optional(v.string()),
+    displayOrder: v.number(),
+    active: v.boolean(),
+    createdAt: v.string(),
+  }).index("by_order", ["displayOrder"])
+    .index("by_active", ["active"]),
+
+  instagramSettings: defineTable({
+    key: v.string(),
+    value: v.any(),
+  }).index("by_key", ["key"]),
 });
