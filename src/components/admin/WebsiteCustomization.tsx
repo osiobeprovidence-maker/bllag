@@ -126,20 +126,29 @@ function InstagramFeedTab({ posts, settings, createPost, updatePost, removePost,
     setShowForm(true);
   };
 
-  const handleSave = () => {
-    if (editingId) {
-      updatePost(editingId, form);
-    } else {
-      createPost(form);
+  const handleSave = async () => {
+    try {
+      if (editingId) {
+        await updatePost(editingId, form);
+      } else {
+        await createPost(form);
+      }
+      resetForm();
+    } catch (err: any) {
+      alert(err.message || 'Failed to save post');
     }
-    resetForm();
   };
 
   const handleSaveSettings = async () => {
     setSavingSettings(true);
-    await updateSettings(localSettings);
-    setSavingSettings(false);
-    setShowSettings(false);
+    try {
+      await updateSettings(localSettings);
+      setShowSettings(false);
+    } catch (err: any) {
+      alert(err.message || 'Failed to save settings');
+    } finally {
+      setSavingSettings(false);
+    }
   };
 
   const handleDragStart = (index: number) => {
@@ -489,15 +498,20 @@ function SliderSettingsTab({ settings, setSetting }: { settings: Record<string, 
 
   const handleSave = async () => {
     setSaving(true);
-    await Promise.all([
-      setSetting('slider_autoplay', form.autoplay),
-      setSetting('slider_interval', form.interval),
-      setSetting('slider_animation_speed', form.animationSpeed),
-      setSetting('slider_loop', form.loop),
-      setSetting('slider_transition', form.transition),
-      setSetting('slider_pause_on_hover', form.pauseOnHover),
-    ]);
-    setSaving(false);
+    try {
+      await Promise.all([
+        setSetting('slider_autoplay', form.autoplay),
+        setSetting('slider_interval', form.interval),
+        setSetting('slider_animation_speed', form.animationSpeed),
+        setSetting('slider_loop', form.loop),
+        setSetting('slider_transition', form.transition),
+        setSetting('slider_pause_on_hover', form.pauseOnHover),
+      ]);
+    } catch (err: any) {
+      alert(err.message || 'Failed to save slider settings');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -573,18 +587,22 @@ function HeroBannersTab({ banners, createBanner, updateBanner, removeBanner, reo
     setShowForm(true);
   };
 
-  const handleSave = () => {
-    const data = { ...form };
-    if (!data.tabletImage) delete data.tabletImage;
-    if (!data.mobileImage) delete data.mobileImage;
-    if (!data.startDate) delete data.startDate;
-    if (!data.endDate) delete data.endDate;
-    if (editingId) {
-      updateBanner(editingId, data);
-    } else {
-      createBanner(data);
+  const handleSave = async () => {
+    try {
+      const data = { ...form };
+      if (!data.tabletImage) delete data.tabletImage;
+      if (!data.mobileImage) delete data.mobileImage;
+      if (!data.startDate) delete data.startDate;
+      if (!data.endDate) delete data.endDate;
+      if (editingId) {
+        await updateBanner(editingId, data);
+      } else {
+        await createBanner(data);
+      }
+      resetForm();
+    } catch (err: any) {
+      alert(err.message || 'Failed to save banner');
     }
-    resetForm();
   };
 
   const previewImage = form.desktopImage || form.mobileImage || '';
@@ -797,13 +815,17 @@ function CategoryImagesTab({ categoryImages, createCategory, updateCategory, rem
     setShowForm(true);
   };
 
-  const handleSave = () => {
-    if (editingId) {
-      updateCategory(editingId, form);
-    } else {
-      createCategory(form);
+  const handleSave = async () => {
+    try {
+      if (editingId) {
+        await updateCategory(editingId, form);
+      } else {
+        await createCategory(form);
+      }
+      resetForm();
+    } catch (err: any) {
+      alert(err.message || 'Failed to save category');
     }
-    resetForm();
   };
 
   return (
@@ -905,12 +927,22 @@ function HomepageSectionsTab({ sections, upsertSection }: any) {
     }
   }, [sections]);
 
-  const handleSaveDefaults = () => {
-    DEFAULT_SECTIONS.forEach((s) => upsertSection(s));
+  const handleSaveDefaults = async () => {
+    try {
+      for (const s of DEFAULT_SECTIONS) {
+        await upsertSection(s);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to create default sections');
+    }
   };
 
-  const handleUpdate = (s: any) => {
-    upsertSection({ sectionKey: s.sectionKey, title: s.title, visible: s.visible, displayOrder: s.displayOrder });
+  const handleUpdate = async (s: any) => {
+    try {
+      await upsertSection({ sectionKey: s.sectionKey, title: s.title, visible: s.visible, displayOrder: s.displayOrder, settings: s.settings });
+    } catch (err: any) {
+      alert(err.message || 'Failed to update section');
+    }
   };
 
   const data = sections && sections.length > 0 ? sections : DEFAULT_SECTIONS;
@@ -965,13 +997,18 @@ function SectionRow({ section, onUpdate }: { section: any; onUpdate?: (s: any) =
     setSettings(section.settings || {});
   }, [section]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (onUpdate) {
-      const data: any = { ...section, title, visible, displayOrder };
-      if (showSettings) {
-        data.settings = settings;
+      try {
+        const data: any = { ...section, title, visible, displayOrder };
+        if (showSettings) {
+          data.settings = settings;
+        }
+        await onUpdate(data);
+      } catch (err: any) {
+        alert(err.message || 'Failed to save section');
+        return;
       }
-      onUpdate(data);
     }
     setEditing(false);
     setShowSettings(false);
@@ -1103,19 +1140,23 @@ function PromotionalBannersTab({ promoBanners, createPromoBanner, updatePromoBan
     setShowForm(true);
   };
 
-  const handleSave = () => {
-    const data = { ...form };
-    if (!data.mobileImage) delete data.mobileImage;
-    if (!data.subtitle) delete data.subtitle;
-    if (!data.bgColor) delete data.bgColor;
-    if (!data.startDate) delete data.startDate;
-    if (!data.endDate) delete data.endDate;
-    if (editingId) {
-      updatePromoBanner(editingId, data);
-    } else {
-      createPromoBanner(data);
+  const handleSave = async () => {
+    try {
+      const data = { ...form };
+      if (!data.mobileImage) delete data.mobileImage;
+      if (!data.subtitle) delete data.subtitle;
+      if (!data.bgColor) delete data.bgColor;
+      if (!data.startDate) delete data.startDate;
+      if (!data.endDate) delete data.endDate;
+      if (editingId) {
+        await updatePromoBanner(editingId, data);
+      } else {
+        await createPromoBanner(data);
+      }
+      resetForm();
+    } catch (err: any) {
+      alert(err.message || 'Failed to save promo banner');
     }
-    resetForm();
   };
 
   return (
@@ -1280,10 +1321,14 @@ function MediaLibraryTab({ media, createMedia, removeMedia, renameMedia, updateA
   const [showAltEditor, setShowAltEditor] = useState<string | null>(null);
   const [altForm, setAltForm] = useState({ alt: '', title: '', description: '' });
 
-  const handleSave = () => {
-    createMedia({ url: form.url, name: form.name, alt: form.alt || undefined, title: form.title || undefined, description: form.description || undefined });
-    setForm({ url: '', name: '', alt: '', title: '', description: '' });
-    setShowForm(false);
+  const handleSave = async () => {
+    try {
+      await createMedia({ url: form.url, name: form.name, alt: form.alt || undefined, title: form.title || undefined, description: form.description || undefined });
+      setForm({ url: '', name: '', alt: '', title: '', description: '' });
+      setShowForm(false);
+    } catch (err: any) {
+      alert(err.message || 'Failed to save media');
+    }
   };
 
   const handleCopyUrl = async (url: string, id: string) => {
@@ -1302,9 +1347,13 @@ function MediaLibraryTab({ media, createMedia, removeMedia, renameMedia, updateA
     setEditName('');
   };
 
-  const handleSaveAlt = (id: string) => {
-    updateAlt({ id, alt: altForm.alt || undefined, title: altForm.title || undefined, description: altForm.description || undefined });
-    setShowAltEditor(null);
+  const handleSaveAlt = async (id: string) => {
+    try {
+      await updateAlt({ id, alt: altForm.alt || undefined, title: altForm.title || undefined, description: altForm.description || undefined });
+      setShowAltEditor(null);
+    } catch (err: any) {
+      alert(err.message || 'Failed to update alt text');
+    }
   };
 
   const filtered = searchQuery

@@ -117,17 +117,25 @@ function CampaignsTab({ campaigns, createCampaign, updateCampaign, removeCampaig
     setShowForm(true);
   };
 
-  const handleSave = () => {
-    if (editingId) {
-      updateCampaign(editingId, form);
-    } else {
-      createCampaign(form);
+  const handleSave = async () => {
+    try {
+      if (editingId) {
+        await updateCampaign(editingId, form);
+      } else {
+        await createCampaign(form);
+      }
+      resetForm();
+    } catch (err: any) {
+      alert(err.message || 'Failed to save campaign');
     }
-    resetForm();
   };
 
-  const handleStatusChange = (id: string, newStatus: string) => {
-    updateCampaign(id, { status: newStatus });
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    try {
+      await updateCampaign(id, { status: newStatus });
+    } catch (err: any) {
+      alert(err.message || 'Failed to update status');
+    }
   };
 
   if (campaigns === undefined) {
@@ -343,13 +351,17 @@ function CouponsTab({ coupons, createCoupon, updateCoupon, removeCoupon }: any) 
     setShowForm(true);
   };
 
-  const handleSave = () => {
-    if (editingId) {
-      updateCoupon(editingId, form);
-    } else {
-      createCoupon(form);
+  const handleSave = async () => {
+    try {
+      if (editingId) {
+        await updateCoupon(editingId, form);
+      } else {
+        await createCoupon(form);
+      }
+      resetForm();
+    } catch (err: any) {
+      alert(err.message || 'Failed to save coupon');
     }
-    resetForm();
   };
 
   if (coupons === undefined) {
